@@ -668,6 +668,7 @@ export interface ChatMessageItem {
 }
 
 export async function getUserConversations(userId: string): Promise<ChatConversationItem[]> {
+  let dbConvs: ChatConversationItem[] = [];
   if (supabase) {
     try {
       const { data, error } = await withTimeout(
@@ -680,21 +681,36 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
       );
 
       if (!error && data) {
-        return data as ChatConversationItem[];
+        dbConvs = data as ChatConversationItem[];
       }
     } catch (err) {
       console.warn("Supabase fetch conversations notice:", err);
     }
   }
 
+  let localConvs: ChatConversationItem[] = [];
   try {
     const stored = getLocalItem(`sparky_threads_${userId}`);
-    if (stored) return JSON.parse(stored);
+    if (stored) localConvs = JSON.parse(stored);
   } catch {
     // ignore
   }
 
-  return [];
+  const map = new Map<string, ChatConversationItem>();
+  dbConvs.forEach((c) => map.set(c.id, c));
+  localConvs.forEach((c) => {
+    if (!map.has(c.id)) map.set(c.id, c);
+  });
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+  );
+
+  if (merged.length > 0) {
+    setLocalItem(`sparky_threads_${userId}`, JSON.stringify(merged));
+  }
+
+  return merged;
 }
 
 export async function createConversation(userId: string, title?: string): Promise<ChatConversationItem> {
@@ -764,6 +780,7 @@ export async function deleteConversation(conversationId: string, userId: string)
 }
 
 export async function getConversationMessages(conversationId: string, userId: string): Promise<ChatMessageItem[]> {
+  let dbMsgs: ChatMessageItem[] = [];
   if (supabase) {
     try {
       const { data, error } = await withTimeout(
@@ -776,21 +793,36 @@ export async function getConversationMessages(conversationId: string, userId: st
       );
 
       if (!error && data) {
-        return data as ChatMessageItem[];
+        dbMsgs = data as ChatMessageItem[];
       }
     } catch (err) {
       console.warn("Supabase fetch conversation messages notice:", err);
     }
   }
 
+  let localMsgs: ChatMessageItem[] = [];
   try {
     const stored = getLocalItem(`sparky_messages_${conversationId}`);
-    if (stored) return JSON.parse(stored);
+    if (stored) localMsgs = JSON.parse(stored);
   } catch {
     // ignore
   }
 
-  return [];
+  const map = new Map<string, ChatMessageItem>();
+  dbMsgs.forEach((m) => map.set(m.id, m));
+  localMsgs.forEach((m) => {
+    if (!map.has(m.id)) map.set(m.id, m);
+  });
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  if (merged.length > 0) {
+    setLocalItem(`sparky_messages_${conversationId}`, JSON.stringify(merged));
+  }
+
+  return merged;
 }
 
 export async function saveChatMessageToDb(

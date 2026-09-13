@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Check, CheckCircle2, Clapperboard, Copy, DollarSign, Layers, RotateCcw, Sparkles, SlidersHorizontal, TrendingUp, Wand2, ShieldCheck, PanelLeft, Plus, MessageSquare, Trash2, LogIn, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, CheckCircle2, Clapperboard, Copy, DollarSign, Layers, RotateCcw, Sparkles, SlidersHorizontal, TrendingUp, Wand2, ShieldCheck, PanelLeft, Plus, MessageSquare, Trash2, LogIn, X, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,6 +51,7 @@ export function IndexPage() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [openAuthModal, setOpenAuthModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // ChatGPT Style Sidebar & Thread State
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -147,11 +148,12 @@ export function IndexPage() {
   };
 
   const initUserAndChat = async () => {
+    setLoading(true);
     try {
       const u = await getCurrentUser();
       setCurrentUser(u);
       if (u) {
-        loadConversationsAndActiveThread(u.id);
+        await loadConversationsAndActiveThread(u.id);
       } else {
         setConversations([]);
         setActiveConvId(null);
@@ -164,6 +166,8 @@ export function IndexPage() {
       setActiveConvId(null);
       setMessages([]);
       setHasStarted(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -208,6 +212,48 @@ export function IndexPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(idKey);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  // Lock State when user is logged out (Same as Content Planner)
+  if (!currentUser && !loading) {
+    return (
+      <main className="page-wrap pb-16 pt-24 min-h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-blue-100/70 via-indigo-50/50 to-blue-50/80 dark:from-slate-950 dark:via-blue-950/30 dark:to-slate-950 px-4">
+        <section className="mx-auto my-8 max-w-xl w-full overflow-hidden rounded-3xl border border-primary/20 bg-background/95 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
+            <Lock className="size-8 text-primary animate-pulse" />
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            Sparky AI Agent Terkunci
+          </h1>
+          <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+            Anda belum masuk (logged out). Silakan masuk atau daftar akun Anda untuk mulai mengobrol dengan Sparky AI Agent, mengakses fitur riset, dan menyimpan riwayat percakapan secara permanen.
+          </p>
+
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => setOpenAuthModal(true)}
+              className="w-full sm:w-auto rounded-xl bg-primary px-8 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-lg transition-transform hover:scale-105"
+            >
+              <LogIn className="mr-2 size-4" /> Masuk / Daftar Akun
+            </Button>
+          </div>
+
+          <div className="mt-7 pt-4 border-t border-border/60 flex items-center justify-center gap-2 text-[11px] text-muted-foreground font-semibold">
+            <ShieldCheck className="size-4 text-emerald-500" /> Riwayat percakapan & konten tersimpan aman di akun Anda
+          </div>
+        </section>
+
+        <AuthModal
+          isOpen={openAuthModal}
+          onClose={() => setOpenAuthModal(false)}
+          onSuccess={(u) => {
+            setCurrentUser(u);
+            initUserAndChat();
+          }}
+        />
+      </main>
+    );
   }
 
   // Date Grouping Helper for Sidebar
