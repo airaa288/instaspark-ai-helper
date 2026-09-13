@@ -476,8 +476,9 @@ let localPostsStorage: ContentPostItem[] = [];
 
 export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostItem[]> {
   const targetId = userId || "guest";
+  let dbPosts: ContentPostItem[] = [];
 
-  if (supabase && userId) {
+  if (supabase && userId && userId !== "guest") {
     try {
       const { data, error } = await withTimeout(
         supabase
@@ -489,7 +490,7 @@ export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostI
       );
 
       if (!error && data) {
-        return data.map((d: any) => ({
+        dbPosts = data.map((d: any) => ({
           id: String(d.id || crypto.randomUUID()),
           user_id: d.user_id,
           title: String(d.title || ""),
@@ -510,15 +511,35 @@ export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostI
     }
   }
 
-  // Local Storage check: if key exists in localStorage, return parsed items (even if empty [])
+  let localPosts: ContentPostItem[] = [];
   try {
     const stored = getLocalItem(`sparky_posts_${targetId}`);
     if (stored !== null) {
-      const parsed: ContentPostItem[] = JSON.parse(stored);
-      return parsed;
+      localPosts = JSON.parse(stored);
     }
-  } catch {
-    // ignore
+  } catch {}
+
+  const map = new Map<string, ContentPostItem>();
+  dbPosts.forEach((p) => map.set(p.id, p));
+  localPosts.forEach((p) => {
+    if (!map.has(p.id)) map.set(p.id, p);
+  });
+
+  const merged = Array.from(map.values());
+
+  if (merged.length > 0) {
+    setLocalItem(`sparky_posts_${targetId}`, JSON.stringify(merged));
+
+    if (supabase && userId && userId !== "guest") {
+      const unsynced = localPosts.filter((p) => !dbPosts.some((dbp) => dbp.id === p.id));
+      if (unsynced.length > 0) {
+        withTimeout(supabase.from("content_posts").upsert(unsynced), 3000).catch((e) =>
+          console.warn("Background posts sync notice:", e)
+        );
+      }
+    }
+
+    return merged;
   }
 
   // First time ever opening planner for this user: Seed initial sample posts ONCE
@@ -553,6 +574,9 @@ export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostI
   ];
 
   setLocalItem(`sparky_posts_${targetId}`, JSON.stringify(defaultInitialPosts));
+  if (supabase && userId && userId !== "guest") {
+    withTimeout(supabase.from("content_posts").upsert(defaultInitialPosts), 3000).catch(() => {});
+  }
   return defaultInitialPosts;
 }
 
