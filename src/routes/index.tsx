@@ -112,9 +112,7 @@ export function IndexPage() {
 
   const handleCreateNewChat = async () => {
     if (!currentUser) {
-      setMessages([]);
-      setHasStarted(false);
-      setActiveConvId(null);
+      setOpenAuthModal(true);
       return;
     }
 
@@ -244,6 +242,11 @@ export function IndexPage() {
   };
 
   async function handleSend(customText?: string) {
+    if (!currentUser) {
+      setOpenAuthModal(true);
+      return;
+    }
+
     const textToSend = (customText || prompt).trim();
     if (!textToSend) return;
 
@@ -334,6 +337,11 @@ export function IndexPage() {
   }
 
   async function handleACCApproval(msgId: string, option: ContentRecommendationOption) {
+    if (!currentUser) {
+      setOpenAuthModal(true);
+      return;
+    }
+
     setMessages((prev) =>
       prev.map((msg) => (msg.id === msgId ? { ...msg, isProcessingAcc: true } : msg))
     );
@@ -582,6 +590,22 @@ export function IndexPage() {
                   <Clapperboard className="size-3.5 text-blue-600 dark:text-blue-400" /> Script Video & Reel Short-form
                 </button>
               </div>
+
+              {!currentUser && (
+                <div className="mt-6 inline-flex flex-col sm:flex-row items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-3 text-xs shadow-xs backdrop-blur-md">
+                  <div className="flex items-center gap-2 font-medium text-foreground">
+                    <ShieldCheck className="size-4 text-primary shrink-0" />
+                    <span>Silakan masuk atau daftar terlebih dahulu untuk memulai percakapan & menyimpan riwayat.</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setOpenAuthModal(true)}
+                    className="rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-xs hover:scale-105 transition"
+                  >
+                    <LogIn className="mr-1.5 size-3.5" /> Masuk / Daftar Akun
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
