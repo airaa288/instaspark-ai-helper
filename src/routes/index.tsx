@@ -73,9 +73,9 @@ export function IndexPage() {
   const [pct2, setPct2] = useState(25);
   const [showRatioSettings, setShowRatioSettings] = useState(false);
 
-  const loadConversationsAndActiveThread = async (userId: string) => {
+  const loadConversationsAndActiveThread = async (userId: string, userEmail?: string) => {
     try {
-      const threads = await getUserConversations(userId);
+      const threads = await getUserConversations(userId, userEmail);
       setConversations(threads);
       if (threads.length > 0 && !activeConvId) {
         selectConversation(threads[0].id, userId);
@@ -90,7 +90,7 @@ export function IndexPage() {
     if (!uid) return;
     setActiveConvId(convId);
     try {
-      const msgs = await getConversationMessages(convId, uid);
+      const msgs = await getConversationMessages(convId, uid, currentUser?.email);
       if (msgs.length > 0) {
         const loadedMsgs: ChatMessage[] = msgs.map((m) => ({
           id: m.id,
@@ -153,7 +153,7 @@ export function IndexPage() {
       const u = await getCurrentUser();
       setCurrentUser(u);
       if (u) {
-        await loadConversationsAndActiveThread(u.id);
+        await loadConversationsAndActiveThread(u.id, u.email);
       } else {
         setConversations([]);
         setActiveConvId(null);
@@ -212,6 +212,18 @@ export function IndexPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(idKey);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  // Loading Screen while checking Auth
+  if (loading) {
+    return (
+      <main className="page-wrap flex min-h-dvh items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Sparkles className="size-8 animate-spin text-primary" />
+          <p className="text-xs font-semibold text-muted-foreground">Memuat Sparky AI...</p>
+        </div>
+      </main>
+    );
   }
 
   // Lock State when user is logged out (Same as Content Planner)

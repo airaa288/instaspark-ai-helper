@@ -64,7 +64,7 @@ export function PlannerPage() {
       const u = await getCurrentUser();
       setCurrentUser(u);
       if (u) {
-        const data = await fetchAllPostsFromDb(u.id);
+        const data = await fetchAllPostsFromDb(u.id, u.email);
         setPosts(data);
       } else {
         setPosts([]);

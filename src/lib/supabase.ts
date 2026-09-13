@@ -281,29 +281,7 @@ export async function signInWithEmail(email: string, pass: string): Promise<{ us
     return { user: null, error: "Mohon isi alamat email dan kata sandi." };
   }
 
-  const accounts = getRegisteredAccounts();
-  const existingLocalAccount = accounts[cleanEmail];
-
-  // Check local registry first
-  if (existingLocalAccount) {
-    if (existingLocalAccount.pass === pass) {
-      const u: UserSession = {
-        id: existingLocalAccount.id,
-        email: cleanEmail,
-        name: existingLocalAccount.name
-      };
-      setLocalItem(LOCAL_USER_KEY, JSON.stringify(u));
-      migrateLegacyUserData(cleanEmail, u.id);
-      return { user: u };
-    } else {
-      return {
-        user: null,
-        error: "Kata sandi salah. Silakan periksa kembali kata sandi Anda."
-      };
-    }
-  }
-
-  // Try Supabase auth if available
+  // 1. Try Supabase auth FIRST if available so every device uses the same Supabase User ID
   if (supabase) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -332,7 +310,29 @@ export async function signInWithEmail(email: string, pass: string): Promise<{ us
     }
   }
 
-  // Email is NOT registered: REJECT signin and direct user to Sign Up tab!
+  // 2. Local registry check as fallback
+  const accounts = getRegisteredAccounts();
+  const existingLocalAccount = accounts[cleanEmail];
+
+  if (existingLocalAccount) {
+    if (existingLocalAccount.pass === pass) {
+      const u: UserSession = {
+        id: existingLocalAccount.id,
+        email: cleanEmail,
+        name: existingLocalAccount.name
+      };
+      setLocalItem(LOCAL_USER_KEY, JSON.stringify(u));
+      migrateLegacyUserData(cleanEmail, u.id);
+      return { user: u };
+    } else {
+      return {
+        user: null,
+        error: "Kata sandi salah. Silakan periksa kembali kata sandi Anda."
+      };
+    }
+  }
+
+  // Email is NOT registered: REJECT signin
   return {
     user: null,
     error: `UNREGISTERED_EMAIL: Akun dengan email "${cleanEmail}" belum terdaftar. Silakan buat akun di tab 'Daftar Baru'.`
@@ -691,7 +691,13 @@ export interface ChatMessageItem {
   actions?: any;
 }
 
-export async function getUserConversations(userId: string): Promise<ChatConversationItem[]> {
+export async function getUserConversations(userId: string, email?: string): Promise<ChatConversationItem[]> {
+  const idsToQuery = Array.from(new Set([
+    userId,
+    email ? getDeterministicUserId(email) : null,
+    userId.includes("@") ? getDeterministicUserId(userId) : null
+  ].filter(Boolean))) as string[];
+
   let dbConvs: ChatConversationItem[] = [];
   if (supabase) {
     try {
@@ -699,9 +705,9 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
         supabase
           .from("chat_conversations")
           .select("*")
-          .eq("user_id", userId)
+          .in("user_id", idsToQuery)
           .order("updated_at", { ascending: false }),
-        2000
+        2500
       );
 
       if (!error && data) {
@@ -714,8 +720,13 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
 
   let localConvs: ChatConversationItem[] = [];
   try {
-    const stored = getLocalItem(`sparky_threads_${userId}`);
-    if (stored) localConvs = JSON.parse(stored);
+    idsToQuery.forEach((id) => {
+      const stored = getLocalItem(`sparky_threads_${id}`);
+      if (stored) {
+        const parsed: ChatConversationItem[] = JSON.parse(stored);
+        localConvs.push(...parsed);
+      }
+    });
   } catch {
     // ignore
   }
@@ -731,7 +742,7 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
   );
 
   if (merged.length > 0) {
-    setLocalItem(`sparky_threads_${userId}`, JSON.stringify(merged));
+    idsToQuery.forEach((id) => setLocalItem(`sparky_threads_${id}`, JSON.stringify(merged)));
   }
 
   return merged;
