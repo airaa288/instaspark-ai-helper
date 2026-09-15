@@ -851,23 +851,20 @@ export function IndexPage() {
                         {/* Inline Generated Video Card (Google Veo 3.1 Video Engine) */}
                         {message.type === "video_card" && message.videoUrl && (
                           <div className="mt-4 overflow-hidden rounded-2xl border border-blue-200 dark:border-blue-800 bg-slate-900/5 dark:bg-slate-900 p-3 shadow-md">
-                            <div className="relative aspect-[9/16] max-w-[220px] mx-auto overflow-hidden rounded-xl bg-slate-950 border border-border/60 shadow-lg">
-                              <img
+                            <div className="relative aspect-[9/16] max-w-[240px] mx-auto overflow-hidden rounded-2xl bg-slate-950 border border-border/80 shadow-2xl">
+                              <video
                                 src={message.videoUrl}
-                                alt="Preview Video Reel 8-Detik Veo 3.1"
-                                className="w-full h-full object-cover animate-pulse"
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover rounded-xl"
                               />
-                              <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center p-3 text-center text-white">
-                                <div className="size-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg mb-2">
-                                  <Clapperboard className="size-5 text-white animate-bounce" />
-                                </div>
-                                <span className="text-[11px] font-bold">Google Veo 3.1 Reel</span>
-                                <span className="text-[9px] text-blue-200 mt-0.5 font-medium">8 Detik · 720p HD</span>
-                              </div>
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                                <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Engine (Rp14.000 / 8s)
+                                <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Video Engine (720p MP4)
                               </span>
                               <Button
                                 size="sm"

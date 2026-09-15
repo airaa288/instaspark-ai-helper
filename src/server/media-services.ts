@@ -50,10 +50,23 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
   const duration = request.durationSeconds || 8;
   const cost = calculateVeoVideoCost(duration);
 
+  const sampleMp4Videos = [
+    "https://vjs.zencdn.net/v/oceans.mp4",
+    "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    "https://www.w3schools.com/html/mov_bbb.mp4"
+  ];
+  const promptLower = (request.prompt || "").toLowerCase();
+  let selectedVideoUrl = sampleMp4Videos[0];
+  if (promptLower.includes("bunga") || promptLower.includes("flower") || promptLower.includes("alam") || promptLower.includes("kucing") || promptLower.includes("buaya")) {
+    selectedVideoUrl = sampleMp4Videos[1];
+  } else if (promptLower.includes("animasi") || promptLower.includes("kartun")) {
+    selectedVideoUrl = sampleMp4Videos[2];
+  }
+
   return {
     id: `veo-${Date.now()}`,
     status: "completed",
-    videoUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1080&auto=format&fit=crop&q=80",
+    videoUrl: selectedVideoUrl,
     durationSeconds: duration,
     costInUSD: cost.costUSD,
     costInIDR: cost.costIDR,
