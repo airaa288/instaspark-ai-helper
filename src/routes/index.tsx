@@ -47,6 +47,7 @@ interface ChatMessage {
   type?: "general" | "recommendation_cards" | "image_card" | "video_card";
   imageUrl?: string;
   videoUrl?: string;
+  topicTitle?: string;
   options?: ContentRecommendationOption[];
   approvedData?: ApprovedContentResult;
   isProcessingAcc?: boolean;
@@ -102,6 +103,9 @@ export function IndexPage() {
           role: m.sender === "user" ? "user" : "agent",
           text: m.content,
           type: m.actions?.type || "general",
+          imageUrl: m.actions?.imageUrl,
+          videoUrl: m.actions?.videoUrl,
+          topicTitle: m.actions?.topicTitle,
           options: m.actions?.options,
           approvedData: m.actions?.approvedData
         }));
@@ -470,7 +474,8 @@ export function IndexPage() {
         text: agentText,
         type: "video_card",
         videoUrl: resVid.videoUrl,
-        imageUrl: resImg.imageUrl
+        imageUrl: resImg.imageUrl,
+        topicTitle: cleanTopic
       };
 
       setMessages((prev) => [...prev, agentMsg]);
@@ -480,10 +485,12 @@ export function IndexPage() {
         saveChatMessageToDb(currentUser.id, currentThreadId, "sparky", agentText, {
           type: "video_card",
           videoUrl: resVid.videoUrl,
-          imageUrl: resImg.imageUrl
+          imageUrl: resImg.imageUrl,
+          topicTitle: cleanTopic
         });
       }
     } else if (isImageRequest) {
+      const cleanImgTopic = textToSend.replace(/^(bikin|buatkan|buat|generate|minta)\s+(gambar|foto|visual)\s*/i, "").trim() || "Visual HD";
       const resImg = await generateNanoBananaImage({ prompt: textToSend, aspectRatio: "4:5" });
       const agentText = `Ini dia gambar visual HD buatan **Google Nano Banana Engine**! 🎨✨\n\nKlik tombol **Download Gambar** di bawah ini untuk menyimpannya ke perangkat Anda:`;
 
@@ -492,7 +499,8 @@ export function IndexPage() {
         role: "agent",
         text: agentText,
         type: "image_card",
-        imageUrl: resImg.imageUrl
+        imageUrl: resImg.imageUrl,
+        topicTitle: cleanImgTopic
       };
 
       setMessages((prev) => [...prev, agentMsg]);
@@ -501,7 +509,8 @@ export function IndexPage() {
       if (currentUser && currentThreadId) {
         saveChatMessageToDb(currentUser.id, currentThreadId, "sparky", agentText, {
           type: "image_card",
-          imageUrl: resImg.imageUrl
+          imageUrl: resImg.imageUrl,
+          topicTitle: cleanImgTopic
         });
       }
     } else {
@@ -952,7 +961,7 @@ export function IndexPage() {
                               <div className="pointer-events-none absolute inset-x-3 top-10 z-10 rounded-xl bg-black/65 backdrop-blur-md p-2.5 text-center text-white border border-white/20 shadow-md">
                                 <span className="inline-block bg-blue-600 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white mb-1">Reel Text Hook</span>
                                 <p className="text-[11px] font-extrabold leading-tight text-white drop-shadow-md">
-                                  "Tahukah kamu rahasia dibalik visual sinematik ini?"
+                                  "{message.topicTitle ? `Tahukah kamu rahasia dibalik ${message.topicTitle}?` : "Tahukah kamu rahasia dibalik visual sinematik ini?"}"
                                 </p>
                               </div>
                             </div>
@@ -969,8 +978,8 @@ export function IndexPage() {
                                       isOpen: true,
                                       mediaUrl: message.imageUrl || message.videoUrl || "",
                                       mediaType: "video",
-                                      title: "Video Reel 8-Detik Sinematik",
-                                      caption: "Konsep Video Reel Instagram 8-detik beranimasi sinematik 3D buatan Google Veo 3.1. #InstaSpark #Reels"
+                                      title: message.topicTitle ? `Video Reel ${message.topicTitle}` : "Video Reel 8-Detik Sinematik",
+                                      caption: `Konsep Video Reel Instagram 8-detik beranimasi sinematik 3D buatan Google Veo 3.1 untuk ${message.topicTitle || "konten brand Anda"}. #InstaSpark #Reels`
                                     });
                                   }}
                                   className="h-7 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition hover:scale-105 active:scale-95"
@@ -991,7 +1000,8 @@ export function IndexPage() {
                                   variant="outline"
                                   onClick={async () => {
                                     if (message.imageUrl) {
-                                      const videoBlobUrl = await create8SecondReelBlobUrl(message.imageUrl, "Tahukah kamu rahasia dibalik kekuatan ini?");
+                                      const hookMsg = message.topicTitle ? `Tahukah kamu rahasia dibalik ${message.topicTitle}?` : "Tahukah kamu rahasia dibalik visual sinematik ini?";
+                                      const videoBlobUrl = await create8SecondReelBlobUrl(message.imageUrl, hookMsg);
                                       triggerDirectDownload(videoBlobUrl, "veo-3.1-reel-8s.mp4");
                                     } else if (message.videoUrl) {
                                       triggerDirectDownload(message.videoUrl, "veo-3.1-reel-8s.mp4");
