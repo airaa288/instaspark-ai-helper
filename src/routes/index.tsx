@@ -485,7 +485,7 @@ export function IndexPage() {
       }
     } else if (isImageRequest) {
       const resImg = await generateNanoBananaImage({ prompt: textToSend, aspectRatio: "4:5" });
-      const agentText = `Ini dia gambar visual HD buatan **Google Nano Banana Engine**! 🎨✨\n\nKlik tombol **Download Gambar** di bawah ini untuk menyimpannya ke perangkating:`;
+      const agentText = `Ini dia gambar visual HD buatan **Google Nano Banana Engine**! 🎨✨\n\nKlik tombol **Download Gambar** di bawah ini untuk menyimpannya ke perangkat Anda:`;
 
       const agentMsg: ChatMessage = {
         id: agentMsgId,
