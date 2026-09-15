@@ -171,33 +171,55 @@ export async function create8SecondReelBlobUrl(imageUrl: string, hookText: strin
           ctx.font = "bold 18px sans-serif";
           ctx.fillText("00:08 REEL HD", canvas.width - 180, 66);
 
-          // Text Hook container
+          // Text Hook container box
           ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
           ctx.beginPath();
           if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(40, 120, canvas.width - 80, 100, 20);
+            ctx.roundRect(40, 110, canvas.width - 80, 125, 20);
           } else {
-            ctx.rect(40, 120, canvas.width - 80, 100);
+            ctx.rect(40, 110, canvas.width - 80, 125);
           }
           ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+          ctx.stroke();
 
-          // Hook badge text
+          // Hook badge tag
           ctx.fillStyle = "#2563eb";
           ctx.beginPath();
           if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(60, 135, 140, 26, 13);
+            ctx.roundRect(55, 125, 140, 26, 13);
           } else {
-            ctx.rect(60, 135, 140, 26);
+            ctx.rect(55, 125, 140, 26);
           }
           ctx.fill();
           ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 12px sans-serif";
-          ctx.fillText("REEL TEXT HOOK", 72, 152);
+          ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
+          ctx.fillText("REEL TEXT HOOK", 67, 142);
 
-          // Hook message text
+          // Multi-line wrapped Hook message text
           ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 20px sans-serif";
-          ctx.fillText(`"${hookText.slice(0, 36)}"`, 60, 195);
+          ctx.font = "bold 22px system-ui, -apple-system, sans-serif";
+          const fullText = `"${hookText.trim()}"`;
+          const words = fullText.split(" ");
+          let currentLine = "";
+          let lineY = 182;
+          const maxWidth = canvas.width - 120;
+
+          for (let n = 0; n < words.length; n++) {
+            const testLine = currentLine + (currentLine ? " " : "") + words[n];
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+              ctx.fillText(currentLine, 55, lineY);
+              currentLine = words[n];
+              lineY += 28;
+            } else {
+              currentLine = testLine;
+            }
+          }
+          if (currentLine) {
+            ctx.fillText(currentLine, 55, lineY);
+          }
 
           if (currentFrame >= totalFrames) {
             clearInterval(interval);
