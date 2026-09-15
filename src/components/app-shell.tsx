@@ -99,6 +99,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </button>
 
+          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/60 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+            <span>🇮🇩</span> B. Indonesia (Aktif)
+          </div>
+
           <nav aria-label="Primary" className="relative flex min-w-0 items-center gap-1 justify-self-end">
             <span
               aria-hidden="true"

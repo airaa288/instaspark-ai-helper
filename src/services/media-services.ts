@@ -65,10 +65,12 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
   ];
   const promptLower = (request.prompt || "").toLowerCase();
   let selectedVideoUrl = sampleMp4Videos[0];
-  if (promptLower.includes("bunga") || promptLower.includes("flower") || promptLower.includes("alam") || promptLower.includes("kucing") || promptLower.includes("buaya")) {
+  if (promptLower.includes("bunga") || promptLower.includes("flower")) {
     selectedVideoUrl = sampleMp4Videos[1];
   } else if (promptLower.includes("animasi") || promptLower.includes("kartun")) {
     selectedVideoUrl = sampleMp4Videos[2];
+  } else {
+    selectedVideoUrl = sampleMp4Videos[0];
   }
 
   return {
