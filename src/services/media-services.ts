@@ -84,6 +84,134 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
   };
 }
 
+export async function create8SecondReelBlobUrl(imageUrl: string, hookText: string = "Tahukah kamu rahasia dibalik visual sinematik ini?"): Promise<string> {
+  if (typeof window === "undefined" || !window.HTMLCanvasElement) {
+    return imageUrl;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imageUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 720;
+        canvas.height = 1280;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(imageUrl);
+
+        const stream = canvas.captureStream ? canvas.captureStream(30) : null;
+        if (!stream || typeof MediaRecorder === "undefined") {
+          return resolve(imageUrl);
+        }
+
+        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : MediaRecorder.isTypeSupported("video/webm")
+          ? "video/webm"
+          : "video/mp4";
+
+        const recorder = new MediaRecorder(stream, { mimeType });
+        const chunks: BlobPart[] = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: mimeType });
+          const blobUrl = URL.createObjectURL(blob);
+          resolve(blobUrl);
+        };
+
+        recorder.start();
+
+        const durationMs = 8000;
+        const fps = 30;
+        const totalFrames = (durationMs / 1000) * fps;
+        let currentFrame = 0;
+
+        const interval = setInterval(() => {
+          currentFrame++;
+          const progress = currentFrame / totalFrames;
+
+          // 3D Ken Burns Camera Pan & Zoom effect
+          const scale = 1.0 + progress * 0.12;
+          const offsetX = Math.sin(progress * Math.PI) * 20;
+          const offsetY = progress * 15;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.scale(scale, scale);
+          ctx.translate(-canvas.width / 2 + offsetX, -canvas.height / 2 + offsetY);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+
+          // Dark vignette gradient overlay
+          const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+          grad.addColorStop(0, "rgba(0,0,0,0.3)");
+          grad.addColorStop(0.7, "rgba(0,0,0,0.1)");
+          grad.addColorStop(1, "rgba(0,0,0,0.85)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Top Reel badge
+          ctx.fillStyle = "rgba(220, 38, 38, 0.9)";
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(canvas.width - 200, 40, 160, 40, 20);
+          } else {
+            ctx.rect(canvas.width - 200, 40, 160, 40);
+          }
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 18px sans-serif";
+          ctx.fillText("00:08 REEL HD", canvas.width - 180, 66);
+
+          // Text Hook container
+          ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(40, 120, canvas.width - 80, 100, 20);
+          } else {
+            ctx.rect(40, 120, canvas.width - 80, 100);
+          }
+          ctx.fill();
+
+          // Hook badge text
+          ctx.fillStyle = "#2563eb";
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(60, 135, 140, 26, 13);
+          } else {
+            ctx.rect(60, 135, 140, 26);
+          }
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 12px sans-serif";
+          ctx.fillText("REEL TEXT HOOK", 72, 152);
+
+          // Hook message text
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 20px sans-serif";
+          ctx.fillText(`"${hookText.slice(0, 36)}"`, 60, 195);
+
+          if (currentFrame >= totalFrames) {
+            clearInterval(interval);
+            recorder.stop();
+          }
+        }, 1000 / fps);
+      } catch {
+        resolve(imageUrl);
+      }
+    };
+    img.onerror = () => resolve(imageUrl);
+  });
+}
+
 export async function triggerDirectDownload(url: string, filename: string = "nano-banana-image.jpg") {
   try {
     if (url.startsWith("data:")) {

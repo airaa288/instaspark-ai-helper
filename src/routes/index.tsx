@@ -13,7 +13,7 @@ import {
   TopicRatio
 } from "@/services/agent-engine";
 import { callGeminiApi } from "@/services/gemini";
-import { generateNanoBananaImage, generateVeoVideo, triggerDirectDownload } from "@/services/media-services";
+import { generateNanoBananaImage, generateVeoVideo, triggerDirectDownload, create8SecondReelBlobUrl } from "@/services/media-services";
 import {
   getCurrentUser,
   getUserConversations,
@@ -907,16 +907,21 @@ export function IndexPage() {
                                     <Download className="mr-1 size-3.5" /> Download Visual Reel (HD)
                                   </Button>
                                 )}
-                                {message.videoUrl && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => triggerDirectDownload(message.videoUrl!, "veo-3.1-reel.mp4")}
-                                    className="h-7 text-xs font-bold rounded-xl border-blue-300 text-blue-700 dark:text-blue-300 shadow-sm transition hover:scale-105 active:scale-95"
-                                  >
-                                    <Download className="mr-1 size-3.5" /> MP4
-                                  </Button>
-                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    if (message.imageUrl) {
+                                      const videoBlobUrl = await create8SecondReelBlobUrl(message.imageUrl, "Tahukah kamu rahasia dibalik kekuatan ini?");
+                                      triggerDirectDownload(videoBlobUrl, "veo-3.1-reel-8s.mp4");
+                                    } else if (message.videoUrl) {
+                                      triggerDirectDownload(message.videoUrl, "veo-3.1-reel-8s.mp4");
+                                    }
+                                  }}
+                                  className="h-7 text-xs font-bold rounded-xl border-blue-300 text-blue-700 dark:text-blue-300 shadow-sm transition hover:scale-105 active:scale-95"
+                                >
+                                  <Download className="mr-1 size-3.5" /> Download Video Reel (8s MP4)
+                                </Button>
                               </div>
                             </div>
                           </div>
