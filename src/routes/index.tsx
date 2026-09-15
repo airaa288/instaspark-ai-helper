@@ -555,12 +555,12 @@ export function IndexPage() {
   const groupedConvs = groupConversationsByDate();
 
   return (
-    <div className="flex h-dvh max-h-dvh overflow-hidden pt-20 bg-gradient-to-b from-blue-100/70 via-indigo-50/50 to-blue-50/80 dark:from-slate-950 dark:via-blue-950/30 dark:to-slate-950">
+    <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden bg-gradient-to-b from-blue-100/70 via-indigo-50/50 to-blue-50/80 dark:from-slate-950 dark:via-blue-950/30 dark:to-slate-950">
       {/* ========================================= */}
       {/* 📚 LEFT CHAT HISTORY SIDEBAR (ChatGPT Style) */}
       {/* ========================================= */}
       <aside
-        className={`fixed md:relative z-40 h-[calc(100dvh-5rem)] w-72 shrink-0 border-r border-border/70 bg-background/95 backdrop-blur-xl shadow-xl transition-all duration-300 flex flex-col ${
+        className={`fixed md:relative z-40 h-full w-72 shrink-0 border-r border-border/70 bg-background/95 backdrop-blur-xl shadow-xl transition-all duration-300 flex flex-col ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:-ml-72"
         }`}
       >
@@ -668,7 +668,7 @@ export function IndexPage() {
       {/* ========================================= */}
       {/* 💬 MAIN CHAT AREA                          */}
       {/* ========================================= */}
-      <main className="flex-1 flex flex-col min-w-0 relative pt-2 sm:pt-3">
+      <main className="flex-1 flex flex-col min-w-0 relative h-full overflow-hidden">
         {/* Toggle Sidebar Button Header Bar */}
         {!sidebarOpen && (
           <button
