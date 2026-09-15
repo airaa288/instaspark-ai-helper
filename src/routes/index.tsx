@@ -668,13 +668,13 @@ export function IndexPage() {
       {/* ========================================= */}
       {/* 💬 MAIN CHAT AREA                          */}
       {/* ========================================= */}
-      <main className="flex-1 flex flex-col min-w-0 relative pt-20">
+      <main className="flex-1 flex flex-col min-w-0 relative pt-2 sm:pt-3">
         {/* Toggle Sidebar Button Header Bar */}
         {!sidebarOpen && (
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="absolute left-4 top-20 z-30 flex items-center gap-1.5 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-md hover:bg-muted transition"
+            className="absolute left-4 top-3 z-30 flex items-center gap-1.5 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-md hover:bg-muted transition"
           >
             <PanelLeft className="size-4 text-primary" />
             <span>Buka Riwayat</span>

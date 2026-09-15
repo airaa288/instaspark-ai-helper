@@ -66,44 +66,31 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-4">
-        <div className="grid w-full max-w-2xl grid-cols-[auto_1fr] items-center gap-2 rounded-full border border-border bg-background/90 p-1.5 shadow-[0_12px_40px_color-mix(in_oklab,var(--foreground)_9%,transparent)] backdrop-blur-xl">
-          <button
-            type="button"
-            aria-label={session ? "Open profile" : "Log in"}
-            onClick={() => {
-              if (session) {
-                setOpenProfileModal(true);
-              } else {
-                setAuthInitialTab("signin");
-                setOpenAuthModal(true);
-              }
-            }}
-            className="group flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-accent/60"
-          >
-            {session ? (
-              <div className="flex items-center gap-2 px-1">
-                <span className="grid size-8 place-items-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-xs">{initials}</span>
-                <div className="flex flex-col text-left pr-1.5 min-w-0">
-                  <span className="max-w-28 truncate text-xs font-bold text-foreground leading-none">{session.name}</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Aktif
-                  </span>
-                </div>
+      <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/95 backdrop-blur-xl shadow-2xs">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-6">
+          {/* Left Brand & Lang Badge */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to="/" className="flex items-center gap-2 font-extrabold text-foreground tracking-tight hover:opacity-90 transition">
+              <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-xs shrink-0">
+                <Sparkles className="size-5 text-white" />
               </div>
-            ) : (
-              <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary group-hover:bg-primary/20 transition-colors">
-                <UserRound className="size-3.5" />
-                <span>Masuk / Daftar</span>
-              </span>
-            )}
-          </button>
+              <div className="hidden xs:flex flex-col text-left">
+                <span className="text-sm font-black leading-none bg-gradient-to-r from-blue-600 via-indigo-600 to-primary bg-clip-text text-transparent">
+                  InstaSpark
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground leading-tight mt-0.5">
+                  AI Marketing Agent
+                </span>
+              </div>
+            </Link>
 
-          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/60 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300">
-            <span>🇮🇩</span> B. Indonesia (Aktif)
+            <div className="hidden md:flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-800/60 bg-blue-50/80 dark:bg-blue-950/60 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+              <span>🇮🇩</span> B. Indonesia (Aktif)
+            </div>
           </div>
 
-          <nav aria-label="Primary" className="relative flex min-w-0 items-center gap-1 justify-self-end">
+          {/* Center Navigation Links */}
+          <nav aria-label="Primary" className="relative flex items-center gap-1 bg-muted/60 p-1 rounded-2xl border border-border/60">
             <span
               aria-hidden="true"
               className="nav-pill"
@@ -115,13 +102,47 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ref={(el) => { linkRefs.current[i] = el; }}
                 to={to}
                 activeOptions={{ exact: to === "/" }}
-                className="nav-link"
+                className="nav-link px-3 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5"
                 activeProps={{ className: "nav-link nav-link-active" }}
               >
-                <Icon /><span className="hidden md:inline">{label}</span>
+                <Icon className="size-4" /><span className="hidden sm:inline">{label}</span>
               </Link>
             ))}
           </nav>
+
+          {/* Right User Profile / Sign in */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={session ? "Open profile" : "Log in"}
+              onClick={() => {
+                if (session) {
+                  setOpenProfileModal(true);
+                } else {
+                  setAuthInitialTab("signin");
+                  setOpenAuthModal(true);
+                }
+              }}
+              className="group flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 p-1.5 hover:bg-accent transition shadow-2xs"
+            >
+              {session ? (
+                <div className="flex items-center gap-2 px-1">
+                  <span className="grid size-7 place-items-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-xs">{initials}</span>
+                  <div className="hidden md:flex flex-col text-left pr-1 min-w-0">
+                    <span className="max-w-24 truncate text-xs font-bold text-foreground leading-none">{session.name}</span>
+                    <span className="text-[9px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Aktif
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-primary">
+                  <UserRound className="size-3.5" />
+                  <span className="hidden sm:inline">Masuk</span>
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
