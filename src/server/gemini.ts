@@ -28,45 +28,48 @@ export interface AIAnalysisResult {
 }
 
 export async function callGeminiApi(options: GeminiRequestOptions): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-  // Fallback to intelligent mock response if no API key is provided
   if (!apiKey) {
     return mockGeminiResponse(options.prompt);
   }
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: options.prompt }]
+  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
+
+  for (const model of candidateModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: options.prompt }]
+            }
+          ],
+          systemInstruction: options.systemInstruction ? {
+            parts: [{ text: options.systemInstruction }]
+          } : undefined,
+          generationConfig: {
+            temperature: options.temperature ?? 0.7,
           }
-        ],
-        systemInstruction: options.systemInstruction ? {
-          parts: [{ text: options.systemInstruction }]
-        } : undefined,
-        generationConfig: {
-          temperature: options.temperature ?? 0.7,
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textResult) {
+          return textResult;
         }
-      })
-    });
-
-    if (!response.ok) {
-      console.warn("Gemini API call returned non-200 status, using fallback response.");
-      return mockGeminiResponse(options.prompt);
+      }
+    } catch (error) {
+      console.error(`Gemini API call failed for model ${model}:`, error);
     }
-
-    const data = await response.json();
-    const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return textResult || mockGeminiResponse(options.prompt);
-  } catch (error) {
-    console.error("Gemini API call failed:", error);
-    return mockGeminiResponse(options.prompt);
   }
+
+  return mockGeminiResponse(options.prompt);
 }
 
 export async function generateContentPlanWithAI(topicOrGoal: string): Promise<GeneratedContentPlan> {

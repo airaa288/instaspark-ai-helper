@@ -39,44 +39,50 @@ export async function callGeminiApi(options: GeminiRequestOptions): Promise<stri
     return mockGeminiResponse(options.prompt);
   }
 
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: options.prompt }]
+  for (const model of candidateModels) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: options.prompt }]
+            }
+          ],
+          systemInstruction: options.systemInstruction ? {
+            parts: [{ text: options.systemInstruction }]
+          } : {
+            parts: [{ text: "Kamu adalah Sparky, asisten AI pemasaran Instagram dari InstaSpark. Jawab dalam Bahasa Indonesia yang ramah, luwes, komunikatif, dan sangat membantu." }]
+          },
+          generationConfig: {
+            temperature: options.temperature ?? 0.7,
           }
-        ],
-        systemInstruction: options.systemInstruction ? {
-          parts: [{ text: options.systemInstruction }]
-        } : undefined,
-        generationConfig: {
-          temperature: options.temperature ?? 0.7,
+        })
+      });
+
+      clearTimeout(timer);
+
+      if (response.ok) {
+        const data = await response.json();
+        const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textResult) {
+          return textResult;
         }
-      })
-    });
-
-    clearTimeout(timer);
-
-    if (!response.ok) {
-      console.warn("Gemini API call returned non-200 status, using fallback response.");
-      return mockGeminiResponse(options.prompt);
+      }
+    } catch {
+      // Try next model candidate
     }
-
-    const data = await response.json();
-    const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return textResult || mockGeminiResponse(options.prompt);
-  } catch (error) {
-    console.warn("Gemini API call timed out or failed, using fast fallback response.");
-    return mockGeminiResponse(options.prompt);
   }
+
+  return mockGeminiResponse(options.prompt);
 }
 
 export async function generateContentPlanWithAI(topicOrGoal: string): Promise<GeneratedContentPlan> {
