@@ -13,7 +13,7 @@ import {
   TopicRatio
 } from "@/services/agent-engine";
 import { callGeminiApi } from "@/services/gemini";
-import { generateNanoBananaImage } from "@/services/media-services";
+import { generateNanoBananaImage, triggerDirectDownload } from "@/services/media-services";
 import {
   getCurrentUser,
   getUserConversations,
@@ -802,15 +802,13 @@ export function IndexPage() {
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                                 <Sparkles className="size-3 text-blue-600" /> Google Nano Banana Engine (1080x1350)
                               </span>
-                              <a
-                                href={message.imageUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                download="nano-banana-image.jpg"
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                              <Button
+                                size="sm"
+                                onClick={() => triggerDirectDownload(message.imageUrl!, "nano-banana-image.jpg")}
+                                className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
                               >
-                                <Download className="size-3.5" /> Download Gambar
-                              </a>
+                                <Download className="mr-1 size-3.5" /> Download Gambar
+                              </Button>
                             </div>
                           </div>
                         )}

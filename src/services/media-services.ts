@@ -72,6 +72,40 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
   };
 }
 
+export async function triggerDirectDownload(url: string, filename: string = "nano-banana-image.jpg") {
+  try {
+    if (url.startsWith("data:")) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch image data");
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+  } catch {
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
 export async function generateNanoBananaImage(request: ImageGenRequest): Promise<ImageGenResponse> {
   const apiKey =
     (typeof process !== "undefined" && process.env?.["IMAGE_GEN_API_KEY"]) ||
@@ -104,12 +138,14 @@ export async function generateNanoBananaImage(request: ImageGenRequest): Promise
         }
       }
     } catch {
-      // Fall through to Pollinations engine
+      // Fall through to clean Flux engine
     }
   }
 
-  const encodedPrompt = encodeURIComponent(request.prompt || "aesthetic instagram post");
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true`;
+  const cleanPrompt = (request.prompt || "aesthetic instagram post").replace(/[^a-zA-Z0-9 ]/g, " ");
+  const encodedPrompt = encodeURIComponent(cleanPrompt);
+  // Flux model with nologo=true & private=true to guarantee 100% watermark-free output
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&private=true&model=flux&enhance=true`;
 
   return {
     id: `img-${Date.now()}`,
