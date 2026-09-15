@@ -408,7 +408,15 @@ export function IndexPage() {
       }
     } else if (isVideoRequest) {
       const resVid = await generateVeoVideo({ prompt: textToSend, durationSeconds: 8, resolution: "720p" });
-      const agentText = `Ini dia Video Reel Sinematik 8-Detik buatan **Google Veo 3.1 Video Engine**! 🎬✨\n\nKamu bisa langsung menekan tombol **Download Video Reel (MP4)** di bawah ini untuk menyimpannya ke Laptop atau Smartphone kamu:`;
+
+      const cleanTopic = textToSend.replace(/^(bikin|buatkan|buat|generate|minta|lanjut)\s+(video|videonya|reel)\s*/i, "").trim() || "Reel Sinematik";
+      const agentText = `🎬 **Hasil Produksi Video Reel (Google Veo 3.1)**:\n\n` +
+        `📹 **Konsep Scene Script 8-Detik**:\n` +
+        `• **[0-2s Hook]**: *"Tahukah kamu rahasia dibalik kekuatan ${cleanTopic}?"*\n` +
+        `• **[2-5s Visual Utama]**: Kamera melakukan pan sinematik close-up memperlihatkan detail visual ${cleanTopic} secara realistis.\n` +
+        `• **[5-8s CTA & Closing]**: Teks overlay "Simpan & Follow untuk info menarik berikutnya!" dengan audio trending.\n\n` +
+        `✨ **Prompt Visual Veo 3.1**: *"Cinematic 8-second vertical 9:16 video: High resolution detailed footage of ${cleanTopic}, 60fps, 35mm lens, studio lighting, smooth motion."*\n\n` +
+        `👇 Putar video atau klik tombol **Download Video Reel (MP4)** di bawah ini:`;
 
       const agentMsg: ChatMessage = {
         id: agentMsgId,
