@@ -900,3 +900,173 @@ export async function saveChatMessageToDb(
 
   return msg;
 }
+
+// =========================================
+// 5. Media Library & Content Planner Integration
+// =========================================
+
+export interface UserMediaItem {
+  id: string;
+  user_id: string;
+  media_type: "image" | "video";
+  media_url: string;
+  title: string;
+  prompt?: string;
+  created_at: string;
+  scheduled_date?: string;
+  status: "generated" | "scheduled" | "published";
+  caption?: string;
+  hashtags?: string;
+}
+
+export interface PlannerEventItem {
+  id: string;
+  user_id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:mm
+  media_url?: string;
+  media_type?: "image" | "video";
+  caption?: string;
+  hashtags?: string;
+  status: "scheduled" | "published";
+  created_at: string;
+}
+
+export async function saveMediaToLibrary(
+  userId: string,
+  mediaData: Omit<UserMediaItem, "id" | "created_at" | "user_id">
+): Promise<UserMediaItem> {
+  const item: UserMediaItem = {
+    id: `media-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    user_id: userId,
+    ...mediaData,
+    created_at: new Date().toISOString()
+  };
+
+  if (supabase) {
+    try {
+      await withTimeout(supabase.from("user_media_library").insert([item]), 2000);
+    } catch (err) {
+      console.warn("Supabase save media notice:", err);
+    }
+  }
+
+  try {
+    const current = await getUserMediaLibrary(userId);
+    const updated = [item, ...current.filter((m) => m.id !== item.id)];
+    setLocalItem(`sparky_media_library_${userId}`, JSON.stringify(updated));
+  } catch {}
+
+  return item;
+}
+
+export async function getUserMediaLibrary(userId: string): Promise<UserMediaItem[]> {
+  let dbItems: UserMediaItem[] = [];
+  if (supabase) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from("user_media_library")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
+        2000
+      );
+      if (!error && data) dbItems = data as UserMediaItem[];
+    } catch (err) {
+      console.warn("Supabase fetch media library notice:", err);
+    }
+  }
+
+  let localItems: UserMediaItem[] = [];
+  try {
+    const stored = getLocalItem(`sparky_media_library_${userId}`);
+    if (stored) localItems = JSON.parse(stored);
+  } catch {}
+
+  const map = new Map<string, UserMediaItem>();
+  dbItems.forEach((i) => map.set(i.id, i));
+  localItems.forEach((i) => {
+    if (!map.has(i.id)) map.set(i.id, i);
+  });
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  if (merged.length > 0) {
+    setLocalItem(`sparky_media_library_${userId}`, JSON.stringify(merged));
+  }
+
+  return merged;
+}
+
+export async function savePlannerEvent(
+  userId: string,
+  eventData: Omit<PlannerEventItem, "id" | "created_at" | "user_id">
+): Promise<PlannerEventItem> {
+  const item: PlannerEventItem = {
+    id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    user_id: userId,
+    ...eventData,
+    created_at: new Date().toISOString()
+  };
+
+  if (supabase) {
+    try {
+      await withTimeout(supabase.from("content_planner").insert([item]), 2000);
+    } catch (err) {
+      console.warn("Supabase save planner event notice:", err);
+    }
+  }
+
+  try {
+    const current = await getPlannerEvents(userId);
+    const updated = [item, ...current.filter((e) => e.id !== item.id)];
+    setLocalItem(`sparky_planner_${userId}`, JSON.stringify(updated));
+  } catch {}
+
+  return item;
+}
+
+export async function getPlannerEvents(userId: string): Promise<PlannerEventItem[]> {
+  let dbEvents: PlannerEventItem[] = [];
+  if (supabase) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from("content_planner")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: true }),
+        2000
+      );
+      if (!error && data) dbEvents = data as PlannerEventItem[];
+    } catch (err) {
+      console.warn("Supabase fetch planner events notice:", err);
+    }
+  }
+
+  let localEvents: PlannerEventItem[] = [];
+  try {
+    const stored = getLocalItem(`sparky_planner_${userId}`);
+    if (stored) localEvents = JSON.parse(stored);
+  } catch {}
+
+  const map = new Map<string, PlannerEventItem>();
+  dbEvents.forEach((e) => map.set(e.id, e));
+  localEvents.forEach((e) => {
+    if (!map.has(e.id)) map.set(e.id, e);
+  });
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  if (merged.length > 0) {
+    setLocalItem(`sparky_planner_${userId}`, JSON.stringify(merged));
+  }
+
+  return merged;
+}

@@ -21,6 +21,8 @@ import {
   deleteConversation,
   getConversationMessages,
   saveChatMessageToDb,
+  saveMediaToLibrary,
+  savePlannerEvent,
   getTodayLocalDateString,
   UserSession,
   ChatConversationItem
@@ -111,6 +113,49 @@ export function IndexPage() {
       }
     } catch (e) {
       console.warn("Error switching conversation thread:", e);
+    }
+  };
+
+  const [accModalData, setAccModalData] = useState<{
+    isOpen: boolean;
+    mediaUrl: string;
+    mediaType: "image" | "video";
+    title: string;
+    caption: string;
+  } | null>(null);
+  const [accScheduledDate, setAccScheduledDate] = useState(() => getTodayLocalDateString());
+  const [accScheduledTime, setAccScheduledTime] = useState("18:00");
+  const [accSuccessMsg, setAccSuccessMsg] = useState<string | null>(null);
+
+  const handleSaveAccToPlanner = async () => {
+    if (!accModalData || !currentUser) return;
+    try {
+      await saveMediaToLibrary(currentUser.id, {
+        media_type: accModalData.mediaType,
+        media_url: accModalData.mediaUrl,
+        title: accModalData.title,
+        status: "scheduled",
+        scheduled_date: accScheduledDate,
+        caption: accModalData.caption
+      });
+
+      await savePlannerEvent(currentUser.id, {
+        title: accModalData.title,
+        date: accScheduledDate,
+        time: accScheduledTime,
+        media_url: accModalData.mediaUrl,
+        media_type: accModalData.mediaType,
+        caption: accModalData.caption,
+        status: "scheduled"
+      });
+
+      setAccSuccessMsg("✅ Konten berhasil di-ACC & tersimpan di Perpustakaan Media & Kalender Konten!");
+      setTimeout(() => {
+        setAccSuccessMsg(null);
+        setAccModalData(null);
+      }, 2000);
+    } catch (e) {
+      console.error("Error saving ACC content:", e);
     }
   };
 
@@ -848,13 +893,31 @@ export function IndexPage() {
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                                 <Sparkles className="size-3 text-blue-600" /> Google Nano Banana Engine (1080x1350)
                               </span>
-                              <Button
-                                size="sm"
-                                onClick={() => triggerDirectDownload(message.imageUrl!, "nano-banana-image.jpg")}
-                                className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
-                              >
-                                <Download className="mr-1 size-3.5" /> Download Gambar
-                              </Button>
+                              <div className="flex items-center gap-1.5">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    if (!currentUser) { setOpenAuthModal(true); return; }
+                                    setAccModalData({
+                                      isOpen: true,
+                                      mediaUrl: message.imageUrl!,
+                                      mediaType: "image",
+                                      title: "Gambar Visual Nano Banana",
+                                      caption: "Visual Instagram HD hasil karya Google Nano Banana Engine. #InstaSpark"
+                                    });
+                                  }}
+                                  className="h-7 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition hover:scale-105 active:scale-95"
+                                >
+                                  <CheckCircle2 className="mr-1 size-3.5" /> ACC & Jadwalkan
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => triggerDirectDownload(message.imageUrl!, "nano-banana-image.jpg")}
+                                  className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                                >
+                                  <Download className="mr-1 size-3.5" /> Download
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -897,14 +960,30 @@ export function IndexPage() {
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                                 <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Video Engine (9:16 HD Reel)
                               </span>
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    if (!currentUser) { setOpenAuthModal(true); return; }
+                                    setAccModalData({
+                                      isOpen: true,
+                                      mediaUrl: message.imageUrl || message.videoUrl || "",
+                                      mediaType: "video",
+                                      title: "Video Reel 8-Detik Sinematik",
+                                      caption: "Konsep Video Reel Instagram 8-detik beranimasi sinematik 3D buatan Google Veo 3.1. #InstaSpark #Reels"
+                                    });
+                                  }}
+                                  className="h-7 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition hover:scale-105 active:scale-95"
+                                >
+                                  <CheckCircle2 className="mr-1 size-3.5" /> ACC & Jadwalkan
+                                </Button>
                                 {message.imageUrl && (
                                   <Button
                                     size="sm"
                                     onClick={() => triggerDirectDownload(message.imageUrl!, "veo-3.1-reel-visual.jpg")}
                                     className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
                                   >
-                                    <Download className="mr-1 size-3.5" /> Download Visual Reel (HD)
+                                    <Download className="mr-1 size-3.5" /> Visual HD
                                   </Button>
                                 )}
                                 <Button
@@ -920,7 +999,7 @@ export function IndexPage() {
                                   }}
                                   className="h-7 text-xs font-bold rounded-xl border-blue-300 text-blue-700 dark:text-blue-300 shadow-sm transition hover:scale-105 active:scale-95"
                                 >
-                                  <Download className="mr-1 size-3.5" /> Download Video Reel (8s MP4)
+                                  <Download className="mr-1 size-3.5" /> Video (8s MP4)
                                 </Button>
                               </div>
                             </div>
@@ -1138,6 +1217,82 @@ export function IndexPage() {
           </div>
         </div>
       </main>
+
+      {/* ACC Scheduling Dialog Modal */}
+      {accModalData && accModalData.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <CheckCircle2 className="size-4 text-emerald-600" /> ACC & Jadwalkan Konten
+              </h3>
+              <button onClick={() => setAccModalData(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {accSuccessMsg ? (
+              <div className="p-4 text-center space-y-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="size-8 text-emerald-600 mx-auto animate-bounce" />
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{accSuccessMsg}</p>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/40">
+                  <div className="size-14 rounded-lg bg-slate-950 overflow-hidden shrink-0">
+                    <img src={accModalData.mediaUrl} alt="Media preview" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-foreground line-clamp-1">{accModalData.title}</h4>
+                    <span className="inline-block bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">
+                      {accModalData.mediaType === "video" ? "📹 Video Reel 8s" : "🖼️ Foto Visual HD"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-foreground">Tanggal Posting Instagram</label>
+                  <input
+                    type="date"
+                    value={accScheduledDate}
+                    onChange={(e) => setAccScheduledDate(e.target.value)}
+                    className="w-full rounded-xl border border-border px-3 py-2 bg-background text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-foreground">Jam Posting Terbaik</label>
+                  <input
+                    type="time"
+                    value={accScheduledTime}
+                    onChange={(e) => setAccScheduledTime(e.target.value)}
+                    className="w-full rounded-xl border border-border px-3 py-2 bg-background text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-foreground">Caption Konten</label>
+                  <textarea
+                    rows={3}
+                    value={accModalData.caption}
+                    onChange={(e) => setAccModalData({ ...accModalData, caption: e.target.value })}
+                    className="w-full rounded-xl border border-border px-3 py-2 bg-background text-xs resize-none font-medium"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setAccModalData(null)} className="rounded-xl text-xs font-semibold">
+                    Batal
+                  </Button>
+                  <Button size="sm" onClick={handleSaveAccToPlanner} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md">
+                    Simpan & Jadwalkan
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <AuthModal
         isOpen={openAuthModal}
