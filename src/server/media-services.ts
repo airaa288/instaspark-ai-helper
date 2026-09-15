@@ -78,21 +78,26 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
 
 function translatePromptForImage(prompt: string): string {
   let p = prompt.toLowerCase().trim();
-  p = p.replace(/^(bikin|buatkan|buat|generate|minta)\s+(gambar|foto|visual)\s+/i, "");
-  p = p.replace(/^(gambar|foto|visual)\s+/i, "");
+  p = p.replace(/^(bikin|buatkan|buat|generate|minta|tolong)\s+(gambar|foto|visual|video|videonya|reel|reels)\s*/i, "");
+  p = p.replace(/^(gambar|foto|visual|video|videonya|reel|reels)\s*/i, "");
+  p = p.replace(/^(tentang|mengenai)\s*/i, "");
+  p = p.trim();
 
   const translations: Record<string, string> = {
-    buaya: "a detailed realistic crocodile resting near water, 4k photo",
-    naga: "a mythical majestic dragon with wings, fantasy art 4k",
-    kucing: "a cute fluffy cat looking at camera, studio lighting",
-    anjing: "a happy friendly dog in a park, 4k photo",
-    kopi: "aesthetic hot coffee cup on a wooden cafe table, warm morning sunlight",
+    buaya: "a detailed realistic crocodile near riverbank, cinematic 4k photo, vertical 9:16",
+    naga: "a mythical majestic dragon with glowing wings, fantasy art 4k photo",
+    kucing: "a cute fluffy cat playing, 4k photo, studio lighting",
+    anjing: "a happy friendly dog running in a park, 4k photo",
+    kopi: "aesthetic hot coffee cup on a wooden cafe table, warm morning sunlight, 4k photo",
     makanan: "delicious gourmet food plated beautifully, food photography 4k",
-    masak: "chef cooking gourmet dish in kitchen, vibrant lighting",
-    baju: "trendy fashion outfit flatlay, aesthetic Instagram style",
+    masak: "chef cooking gourmet dish in kitchen, vibrant studio lighting",
+    baju: "trendy fashion outfit flatlay, aesthetic Instagram style, 4k photo",
     skincare: "luxurious skincare bottle packaging on marble background, soft studio lighting",
-    mobil: "sleek modern sports car driving on scenic road, 4k sunset",
-    pantai: "tropical paradise beach with turquoise water and palm trees, golden hour"
+    mobil: "sleek modern sports car driving on scenic highway at sunset, 4k photo",
+    pantai: "tropical paradise beach with turquoise water and palm trees, golden hour 4k photo",
+    bunga: "beautiful colorful fresh flowers blooming in garden, macro 4k photo",
+    alam: "majestic mountain landscape with river under clear blue sky, 4k photo",
+    fitness: "athletic person training in modern gym, cinematic lighting 4k"
   };
 
   for (const [key, val] of Object.entries(translations)) {
@@ -101,7 +106,7 @@ function translatePromptForImage(prompt: string): string {
     }
   }
 
-  return `aesthetic high quality photo of ${p}, 4k resolution, clean composition`;
+  return `cinematic high quality detailed photo of ${p || "Instagram content"}, 4k resolution, professional composition`;
 }
 
 export async function generateNanoBananaImage(request: ImageGenRequest): Promise<ImageGenResponse> {
