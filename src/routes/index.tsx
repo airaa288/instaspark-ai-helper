@@ -407,23 +407,25 @@ export function IndexPage() {
         });
       }
     } else if (isVideoRequest) {
+      const resImg = await generateNanoBananaImage({ prompt: textToSend, aspectRatio: "9:16" });
       const resVid = await generateVeoVideo({ prompt: textToSend, durationSeconds: 8, resolution: "720p" });
 
       const cleanTopic = textToSend.replace(/^(bikin|buatkan|buat|generate|minta|lanjut)\s+(video|videonya|reel)\s*/i, "").trim() || "Reel Sinematik";
       const agentText = `🎬 **Hasil Produksi Video Reel (Google Veo 3.1)**:\n\n` +
         `📹 **Konsep Scene Script 8-Detik**:\n` +
         `• **[0-2s Hook]**: *"Tahukah kamu rahasia dibalik kekuatan ${cleanTopic}?"*\n` +
-        `• **[2-5s Visual Utama]**: Kamera melakukan pan sinematik close-up memperlihatkan detail visual ${cleanTopic} secara realistis.\n` +
+        `• **[2-5s Visual Utama]**: Kamera melakukan pan sinematik 3D close-up memperlihatkan detail visual ${cleanTopic} secara realistis.\n` +
         `• **[5-8s CTA & Closing]**: Teks overlay "Simpan & Follow untuk info menarik berikutnya!" dengan audio trending.\n\n` +
         `✨ **Prompt Visual Veo 3.1**: *"Cinematic 8-second vertical 9:16 video: High resolution detailed footage of ${cleanTopic}, 60fps, 35mm lens, studio lighting, smooth motion."*\n\n` +
-        `👇 Putar video atau klik tombol **Download Video Reel (MP4)** di bawah ini:`;
+        `👇 Putar video Reel 8-detik di bawah ini:`;
 
       const agentMsg: ChatMessage = {
         id: agentMsgId,
         role: "agent",
         text: agentText,
         type: "video_card",
-        videoUrl: resVid.videoUrl
+        videoUrl: resVid.videoUrl,
+        imageUrl: resImg.imageUrl
       };
 
       setMessages((prev) => [...prev, agentMsg]);
@@ -432,7 +434,8 @@ export function IndexPage() {
       if (currentUser && currentThreadId) {
         saveChatMessageToDb(currentUser.id, currentThreadId, "sparky", agentText, {
           type: "video_card",
-          videoUrl: resVid.videoUrl
+          videoUrl: resVid.videoUrl,
+          imageUrl: resImg.imageUrl
         });
       }
     } else if (isImageRequest) {
@@ -857,36 +860,64 @@ export function IndexPage() {
                         )}
 
                         {/* Inline Generated Video Card (Google Veo 3.1 Video Engine) */}
-                        {message.type === "video_card" && message.videoUrl && (
+                        {message.type === "video_card" && (message.videoUrl || message.imageUrl) && (
                           <div className="mt-4 overflow-hidden rounded-2xl border border-blue-200 dark:border-blue-800 bg-slate-900/5 dark:bg-slate-900 p-3 shadow-md">
                             <div className="relative aspect-[9/16] max-w-[240px] mx-auto overflow-hidden rounded-2xl bg-slate-950 border border-border/80 shadow-2xl group">
-                              <video
-                                src={message.videoUrl}
-                                controls
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                                className="w-full h-full object-cover rounded-xl"
-                              />
-                              <div className="pointer-events-none absolute inset-x-3 top-4 z-10 rounded-xl bg-black/60 backdrop-blur-md p-2.5 text-center text-white border border-white/20 shadow-md">
+                              {message.imageUrl ? (
+                                <div className="relative w-full h-full overflow-hidden">
+                                  <img
+                                    src={message.imageUrl}
+                                    alt="Google Veo 3.1 Visual Reel"
+                                    className="w-full h-full object-cover transform scale-105 transition-transform duration-10000 ease-in-out hover:scale-110"
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                                  <div className="absolute top-2 right-2 bg-red-600/90 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow flex items-center gap-1">
+                                    <span className="size-1.5 rounded-full bg-white animate-ping" /> 00:08 Reel HD
+                                  </div>
+                                </div>
+                              ) : (
+                                <video
+                                  src={message.videoUrl}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  className="w-full h-full object-cover rounded-xl"
+                                />
+                              )}
+                              <div className="pointer-events-none absolute inset-x-3 top-10 z-10 rounded-xl bg-black/65 backdrop-blur-md p-2.5 text-center text-white border border-white/20 shadow-md">
                                 <span className="inline-block bg-blue-600 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white mb-1">Reel Text Hook</span>
                                 <p className="text-[11px] font-extrabold leading-tight text-white drop-shadow-md">
-                                  "Tahukah kamu rahasia dibalik kekuatan ini?"
+                                  "Tahukah kamu rahasia dibalik visual sinematik ini?"
                                 </p>
                               </div>
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                                <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Video Engine (720p MP4)
+                                <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Video Engine (9:16 HD Reel)
                               </span>
-                              <Button
-                                size="sm"
-                                onClick={() => triggerDirectDownload(message.videoUrl!, "veo-3.1-reel.mp4")}
-                                className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
-                              >
-                                <Download className="mr-1 size-3.5" /> Download Video Reel (MP4)
-                              </Button>
+                              <div className="flex items-center gap-1.5">
+                                {message.imageUrl && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => triggerDirectDownload(message.imageUrl!, "veo-3.1-reel-visual.jpg")}
+                                    className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                                  >
+                                    <Download className="mr-1 size-3.5" /> Download Visual Reel (HD)
+                                  </Button>
+                                )}
+                                {message.videoUrl && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => triggerDirectDownload(message.videoUrl!, "veo-3.1-reel.mp4")}
+                                    className="h-7 text-xs font-bold rounded-xl border-blue-300 text-blue-700 dark:text-blue-300 shadow-sm transition hover:scale-105 active:scale-95"
+                                  >
+                                    <Download className="mr-1 size-3.5" /> MP4
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )}

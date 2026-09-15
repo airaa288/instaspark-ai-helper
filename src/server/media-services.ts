@@ -108,6 +108,16 @@ export async function generateNanoBananaImage(request: ImageGenRequest): Promise
   const apiKey = process.env.IMAGE_GEN_API_KEY || process.env.GEMINI_API_KEY;
   const englishPrompt = translatePromptForImage(request.prompt || "");
 
+  let width = 1080;
+  let height = 1350;
+  if (request.aspectRatio === "9:16") {
+    width = 720;
+    height = 1280;
+  } else if (request.aspectRatio === "1:1") {
+    width = 1080;
+    height = 1080;
+  }
+
   if (apiKey) {
     try {
       const controller = new AbortController();
@@ -143,7 +153,7 @@ export async function generateNanoBananaImage(request: ImageGenRequest): Promise
   }
 
   const encodedPrompt = encodeURIComponent(englishPrompt);
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&private=true&model=flux&enhance=true`;
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true&private=true&model=flux&enhance=true`;
 
   return {
     id: `img-${Date.now()}`,
