@@ -169,17 +169,13 @@ export async function getCurrentUser(): Promise<UserSession | null> {
         setLocalItem(LOCAL_USER_KEY, JSON.stringify(u));
         migrateLegacyUserData(u.email, u.id);
         return u;
-      } else {
-        // Supabase explicitly reports logged out: clear stale local session
-        removeLocalItem(LOCAL_USER_KEY);
-        return null;
       }
     } catch (err) {
       console.warn("Supabase auth session fetch notice:", err);
     }
   }
 
-  // Fallback to local session storage only if Supabase is offline
+  // Fallback to local session storage
   try {
     const stored = getLocalItem(LOCAL_USER_KEY);
     if (stored) {
