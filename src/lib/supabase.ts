@@ -474,17 +474,23 @@ export function getTodayLocalDateString(): string {
 
 let localPostsStorage: ContentPostItem[] = [];
 
-export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostItem[]> {
+export async function fetchAllPostsFromDb(userId?: string, email?: string): Promise<ContentPostItem[]> {
   const targetId = userId || "guest";
+  const idsToQuery = Array.from(new Set([
+    targetId,
+    email ? getDeterministicUserId(email) : null,
+    targetId.includes("@") ? getDeterministicUserId(targetId) : null
+  ].filter(Boolean))) as string[];
+
   let dbPosts: ContentPostItem[] = [];
 
-  if (supabase && userId && userId !== "guest") {
+  if (supabase && targetId !== "guest") {
     try {
       const { data, error } = await withTimeout(
         supabase
           .from("content_posts")
           .select("*")
-          .eq("user_id", userId)
+          .in("user_id", idsToQuery)
           .order("created_at", { ascending: false }),
         2500
       );
@@ -513,10 +519,13 @@ export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostI
 
   let localPosts: ContentPostItem[] = [];
   try {
-    const stored = getLocalItem(`sparky_posts_${targetId}`);
-    if (stored !== null) {
-      localPosts = JSON.parse(stored);
-    }
+    idsToQuery.forEach((id) => {
+      const stored = getLocalItem(`sparky_posts_${id}`);
+      if (stored !== null) {
+        const parsed: ContentPostItem[] = JSON.parse(stored);
+        localPosts.push(...parsed);
+      }
+    });
   } catch {}
 
   const map = new Map<string, ContentPostItem>();
@@ -525,59 +534,30 @@ export async function fetchAllPostsFromDb(userId?: string): Promise<ContentPostI
     if (!map.has(p.id)) map.set(p.id, p);
   });
 
-  const merged = Array.from(map.values());
+  // Filter out any legacy dummy sample posts automatically
+  const merged = Array.from(map.values()).filter(
+    (p) => p.id !== "post-sample-1" && p.id !== "post-sample-2"
+  );
 
-  if (merged.length > 0) {
-    setLocalItem(`sparky_posts_${targetId}`, JSON.stringify(merged));
-
-    if (supabase && userId && userId !== "guest") {
-      const unsynced = localPosts.filter((p) => !dbPosts.some((dbp) => dbp.id === p.id));
-      if (unsynced.length > 0) {
-        withTimeout(supabase.from("content_posts").upsert(unsynced), 3000).catch((e) =>
-          console.warn("Background posts sync notice:", e)
-        );
-      }
-    }
-
-    return merged;
+  // Purge sample posts from DB if present
+  if (supabase && targetId !== "guest") {
+    withTimeout(supabase.from("content_posts").delete().in("id", ["post-sample-1", "post-sample-2"]), 2000).catch(() => {});
   }
 
-  // First time ever opening planner for this user: Seed initial sample posts ONCE
-  const todayStr = getTodayLocalDateString();
-  const defaultInitialPosts: ContentPostItem[] = [
-    {
-      id: "post-sample-1",
-      user_id: targetId,
-      title: "3 Alat AI Terbaru yang Mengubah Industri",
-      script: "[Scene 1] Hook: Tahukah kamu bahwa 3 alat AI ini bisa menghemat waktu 10 jam per minggu?\n[Scene 2] Penjelasan Alat 1 & 2...",
-      caption: "Efisiensi alur kerja dengan AI 🚀 #TeknologiAI #Productivity",
-      hashtags: ["#TeknologiAI", "#Productivity", "#BuildInPublic"],
-      veo_duration_seconds: 8,
-      veo_cost_idr: 40000,
-      scheduled_date: todayStr,
-      scheduled_time: "18:00",
-      status: "Scheduled"
-    },
-    {
-      id: "post-sample-2",
-      user_id: targetId,
-      title: "Langkah Awal Memahami AI Tanpa Coding",
-      script: "[Slide 1] Panduan lengkap memahami prompt engineering...",
-      caption: "Belajar AI tanpa takut rumit ✨ #EdukasiAI",
-      hashtags: ["#EdukasiAI", "#TipsInstagram"],
-      veo_duration_seconds: 8,
-      veo_cost_idr: 40000,
-      scheduled_date: todayStr,
-      scheduled_time: "19:30",
-      status: "Scheduled"
-    }
-  ];
+  idsToQuery.forEach((id) => setLocalItem(`sparky_posts_${id}`, JSON.stringify(merged)));
 
-  setLocalItem(`sparky_posts_${targetId}`, JSON.stringify(defaultInitialPosts));
-  if (supabase && userId && userId !== "guest") {
-    withTimeout(supabase.from("content_posts").upsert(defaultInitialPosts), 3000).catch(() => {});
+  if (merged.length > 0 && supabase && targetId !== "guest") {
+    const unsynced = localPosts.filter(
+      (p) => p.id !== "post-sample-1" && p.id !== "post-sample-2" && !dbPosts.some((dbp) => dbp.id === p.id)
+    );
+    if (unsynced.length > 0) {
+      withTimeout(supabase.from("content_posts").upsert(unsynced), 3000).catch((e) =>
+        console.warn("Background posts sync notice:", e)
+      );
+    }
   }
-  return defaultInitialPosts;
+
+  return merged;
 }
 
 export async function savePostToDb(post: Omit<ContentPostItem, "id"> & { id?: string }): Promise<ContentPostItem> {
