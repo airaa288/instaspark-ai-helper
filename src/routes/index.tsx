@@ -859,7 +859,7 @@ export function IndexPage() {
                         {/* Inline Generated Video Card (Google Veo 3.1 Video Engine) */}
                         {message.type === "video_card" && message.videoUrl && (
                           <div className="mt-4 overflow-hidden rounded-2xl border border-blue-200 dark:border-blue-800 bg-slate-900/5 dark:bg-slate-900 p-3 shadow-md">
-                            <div className="relative aspect-[9/16] max-w-[240px] mx-auto overflow-hidden rounded-2xl bg-slate-950 border border-border/80 shadow-2xl">
+                            <div className="relative aspect-[9/16] max-w-[240px] mx-auto overflow-hidden rounded-2xl bg-slate-950 border border-border/80 shadow-2xl group">
                               <video
                                 src={message.videoUrl}
                                 controls
@@ -869,6 +869,12 @@ export function IndexPage() {
                                 playsInline
                                 className="w-full h-full object-cover rounded-xl"
                               />
+                              <div className="pointer-events-none absolute inset-x-3 top-4 z-10 rounded-xl bg-black/60 backdrop-blur-md p-2.5 text-center text-white border border-white/20 shadow-md">
+                                <span className="inline-block bg-blue-600 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white mb-1">Reel Text Hook</span>
+                                <p className="text-[11px] font-extrabold leading-tight text-white drop-shadow-md">
+                                  "Tahukah kamu rahasia dibalik kekuatan ini?"
+                                </p>
+                              </div>
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
