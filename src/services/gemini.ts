@@ -28,7 +28,11 @@ export interface AIAnalysisResult {
 }
 
 export async function callGeminiApi(options: GeminiRequestOptions): Promise<string> {
-  const apiKey = (typeof process !== "undefined" && process.env["GEMINI_API_KEY"]) || "";
+  const apiKey =
+    (typeof process !== "undefined" && process.env?.["GEMINI_API_KEY"]) ||
+    (typeof import.meta !== "undefined" && (import.meta.env?.VITE_GEMINI_API_KEY as string)) ||
+    (typeof import.meta !== "undefined" && (import.meta.env?.GEMINI_API_KEY as string)) ||
+    "";
 
   // Fallback to intelligent mock response if no API key is provided
   if (!apiKey) {
