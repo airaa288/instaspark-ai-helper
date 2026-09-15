@@ -1,12 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, Bot, CalendarDays, LogOut, Newspaper, UserRound, X, Sparkles, ShieldCheck, Image as ImageIcon } from "lucide-react";
+import { BarChart3, Bot, CalendarDays, LogOut, Newspaper, UserRound, X, Sparkles, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getCurrentUser, signOutUser, UserSession } from "@/lib/supabase";
 import { AuthModal } from "@/components/auth-modal";
 
 const items = [
   { label: "AI Agent", to: "/" as const, icon: Bot },
-  { label: "Media Library", to: "/library" as const, icon: ImageIcon },
   { label: "Content Planner", to: "/planner" as const, icon: CalendarDays },
   { label: "News", to: "/news" as const, icon: Newspaper },
   { label: "Analytics", to: "/analytics" as const, icon: BarChart3 },

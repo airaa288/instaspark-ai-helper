@@ -266,148 +266,8 @@ export function PlannerPage() {
           <span className="text-[10px] text-muted-foreground font-medium">Status Manajemen Konten</span>
         </div>
       </section>
-      {/* Primary Tab Switcher: Kalender Konten vs Perpustakaan Media AI */}
-      <div className="mb-6 flex items-center gap-2 border-b border-border/80 pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab("calendar")}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
-            activeTab === "calendar"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          <CalendarDays className="size-4" /> Kalender Konten ({posts.length})
-        </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("library")}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
-            activeTab === "library"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          <ImageIcon className="size-4" /> Perpustakaan Media AI ({mediaItems.length})
-        </button>
-      </div>
-
-      {activeTab === "library" && (
-        <section className="space-y-4 mb-8">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/80 p-3 shadow-2xs">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">Filter Format Media:</span>
-              <div className="flex items-center gap-1.5">
-                {(["Semua", "image", "video"] as const).map((fmt) => (
-                  <button
-                    key={fmt}
-                    onClick={() => setMediaFilter(fmt)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${
-                      mediaFilter === fmt
-                        ? "bg-primary/10 text-primary border border-primary/20 font-bold"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {fmt === "Semua" ? "Semua Media" : fmt === "image" ? "🖼️ Foto Visual HD" : "📹 Video Reel 8s"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <span className="text-[11px] text-muted-foreground font-semibold">
-              Menampilkan {mediaItems.filter(m => mediaFilter === "Semua" || m.media_type === mediaFilter).length} media buatan Sparky AI
-            </span>
-          </div>
-
-          {mediaItems.filter(m => mediaFilter === "Semua" || m.media_type === mediaFilter).length === 0 ? (
-            <div className="text-center py-16 px-4 rounded-3xl border border-dashed border-border bg-muted/20 space-y-3">
-              <ImageIcon className="size-10 text-muted-foreground/40 mx-auto" />
-              <h3 className="text-sm font-bold text-foreground">Belum Ada Media di Perpustakaan</h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Minta Sparky AI Agent untuk membuatkan Foto Visual atau Video Reel di tab AI Agent. Hasilnya akan otomatis tersimpan di sini!
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {mediaItems
-                .filter((m) => mediaFilter === "Semua" || m.media_type === mediaFilter)
-                .map((item) => (
-                  <div key={item.id} className="group overflow-hidden rounded-2xl border border-border/80 bg-background shadow-2xs hover:shadow-md transition flex flex-col">
-                    <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden">
-                      {item.media_type === "video" ? (
-                        <div className="relative w-full h-full">
-                          <img src={item.media_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <Video className="size-8 text-white drop-shadow-md" />
-                          </div>
-                          <span className="absolute top-2 right-2 bg-blue-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">
-                            Veo 3.1 8s
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="relative w-full h-full">
-                          <img src={item.media_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <span className="absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">
-                            Nano Banana HD
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground line-clamp-1">{item.title}</h4>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.prompt || item.caption || "Konten disetujui dari Sparky AI"}</p>
-                      </div>
-
-                      <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            if (item.media_type === "video") {
-                              const vUrl = await create8SecondReelBlobUrl(item.media_url, item.title);
-                              triggerDirectDownload(vUrl, "veo-3.1-reel-8s.mp4");
-                            } else {
-                              triggerDirectDownload(item.media_url, "nano-banana-image.jpg");
-                            }
-                          }}
-                          className="h-7 text-[10px] font-bold rounded-xl border-blue-200 text-blue-700 dark:text-blue-300"
-                        >
-                          <Download className="mr-1 size-3" /> Download
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setDraft({
-                              id: "",
-                              user_id: currentUser?.id,
-                              title: item.title,
-                              script: `Script video & visual untuk ${item.title}`,
-                              caption: item.caption || `Postingan Instagram ${item.title} #InstaSpark`,
-                              hashtags: ["InstaSpark", "FYP", "Reels"],
-                              scheduled_date: iso(view.year, view.month, new Date().getDate()),
-                              scheduled_time: "18:00",
-                              status: "Scheduled"
-                            });
-                            setActiveTab("calendar");
-                          }}
-                          className="h-7 text-[10px] font-bold rounded-xl bg-primary text-primary-foreground shadow-2xs"
-                        >
-                          <Plus className="mr-1 size-3" /> Jadwalkan
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === "calendar" && (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {/* Feature 2 & 3: Filter Pills Bar & View Switcher */}
           <section className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 bg-white/80 dark:bg-slate-900/80 p-3 shadow-xs backdrop-blur-md">
         {/* Status Filter Tabs */}
@@ -607,7 +467,6 @@ export function PlannerPage() {
         </section>
       )}
     </div>
-  )}
 
       {/* Edit Modal Dialog */}
       <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
