@@ -7,9 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Image as ImageIcon, Video, Download, CheckCircle2 } from "lucide-react";
-import { fetchAllPostsFromDb, savePostToDb, deletePostFromDb, ContentPostItem, getCurrentUser, UserSession, getUserMediaLibrary, UserMediaItem } from "@/lib/supabase";
-import { triggerDirectDownload, create8SecondReelBlobUrl } from "@/services/media-services";
+import { fetchAllPostsFromDb, savePostToDb, deletePostFromDb, ContentPostItem, getCurrentUser, UserSession } from "@/lib/supabase";
 import { AuthModal } from "@/components/auth-modal";
 
 export const Route = createFileRoute("/planner")({
@@ -59,9 +57,6 @@ export function PlannerPage() {
   // New Filters & View Toggles
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Semua");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [activeTab, setActiveTab] = useState<"calendar" | "library">("calendar");
-  const [mediaItems, setMediaItems] = useState<UserMediaItem[]>([]);
-  const [mediaFilter, setMediaFilter] = useState<"Semua" | "image" | "video">("Semua");
 
   const checkUserAndLoadPosts = async () => {
     setLoading(true);
@@ -69,18 +64,13 @@ export function PlannerPage() {
       const u = await getCurrentUser();
       setCurrentUser(u);
       if (u) {
-        const [data, mediaData] = await Promise.all([
-          fetchAllPostsFromDb(u.id, u.email),
-          getUserMediaLibrary(u.id)
-        ]);
+        const data = await fetchAllPostsFromDb(u.id, u.email);
         setPosts(data);
-        setMediaItems(mediaData);
       } else {
         setPosts([]);
-        setMediaItems([]);
       }
     } catch (e) {
-      console.error("Failed to load user/posts/media:", e);
+      console.error("Failed to load user/posts:", e);
     } finally {
       setLoading(false);
     }
