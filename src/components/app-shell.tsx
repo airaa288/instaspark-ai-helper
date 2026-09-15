@@ -82,12 +82,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="group flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-accent/60"
           >
             {session ? (
-              <>
-                <span className="grid size-9 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{initials}</span>
-                <span className="max-w-28 truncate pr-2 text-sm font-semibold text-foreground">{session.name}</span>
-              </>
+              <div className="flex items-center gap-2 px-1">
+                <span className="grid size-8 place-items-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-xs">{initials}</span>
+                <div className="flex flex-col text-left pr-1.5 min-w-0">
+                  <span className="max-w-28 truncate text-xs font-bold text-foreground leading-none">{session.name}</span>
+                  <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Aktif
+                  </span>
+                </div>
+              </div>
             ) : (
-              <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary group-hover:bg-primary/20 transition-colors">
+              <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary group-hover:bg-primary/20 transition-colors">
                 <UserRound className="size-3.5" />
                 <span>Masuk / Daftar</span>
               </span>

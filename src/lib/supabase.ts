@@ -156,29 +156,41 @@ export async function getCurrentUser(): Promise<UserSession | null> {
     try {
       const { data: { session } } = await withTimeout(supabase.auth.getSession(), 2000);
       if (session?.user) {
+        const rawEmail = session.user.email || "";
+        const cleanEmail = rawEmail.trim().toLowerCase();
+        const metaName = session.user.user_metadata?.full_name || cleanEmail.split("@")[0] || "Sparky User";
+        const formattedName = metaName.charAt(0).toUpperCase() + metaName.slice(1);
         const u: UserSession = {
           id: session.user.id,
-          email: session.user.email || "",
-          name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "Sparky User",
+          email: cleanEmail,
+          name: formattedName,
           avatar_url: session.user.user_metadata?.avatar_url
         };
+        setLocalItem(LOCAL_USER_KEY, JSON.stringify(u));
         migrateLegacyUserData(u.email, u.id);
         return u;
+      } else {
+        // Supabase explicitly reports logged out: clear stale local session
+        removeLocalItem(LOCAL_USER_KEY);
+        return null;
       }
     } catch (err) {
-      console.warn("Supabase auth session fetch error or timeout:", err);
+      console.warn("Supabase auth session fetch notice:", err);
     }
   }
 
-  // Fallback to local session storage
+  // Fallback to local session storage only if Supabase is offline
   try {
     const stored = getLocalItem(LOCAL_USER_KEY);
     if (stored) {
       const u: UserSession = JSON.parse(stored);
       if (u && u.email) {
+        u.email = u.email.trim().toLowerCase();
+        const name = u.name || u.email.split("@")[0];
+        u.name = name.charAt(0).toUpperCase() + name.slice(1);
         migrateLegacyUserData(u.email, u.id);
+        return u;
       }
-      return u;
     }
   } catch {
     // Ignore storage parse error
