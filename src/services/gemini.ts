@@ -39,7 +39,7 @@ export async function callGeminiApi(options: GeminiRequestOptions): Promise<stri
     return mockGeminiResponse(options.prompt);
   }
 
-  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
+  const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"];
 
   for (const model of candidateModels) {
     try {
@@ -64,6 +64,7 @@ export async function callGeminiApi(options: GeminiRequestOptions): Promise<stri
           },
           generationConfig: {
             temperature: options.temperature ?? 0.7,
+            maxOutputTokens: 800,
           }
         })
       });
