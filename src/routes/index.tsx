@@ -13,7 +13,7 @@ import {
   TopicRatio
 } from "@/services/agent-engine";
 import { callGeminiApi } from "@/services/gemini";
-import { generateNanoBananaImage, triggerDirectDownload } from "@/services/media-services";
+import { generateNanoBananaImage, generateVeoVideo, triggerDirectDownload } from "@/services/media-services";
 import {
   getCurrentUser,
   getUserConversations,
@@ -42,8 +42,9 @@ interface ChatMessage {
   id: string;
   role: "user" | "agent";
   text: string;
-  type?: "general" | "recommendation_cards" | "image_card";
+  type?: "general" | "recommendation_cards" | "image_card" | "video_card";
   imageUrl?: string;
+  videoUrl?: string;
   options?: ContentRecommendationOption[];
   approvedData?: ApprovedContentResult;
   isProcessingAcc?: boolean;
@@ -354,16 +355,29 @@ export function IndexPage() {
       lower === "buatkan 4 opsi" ||
       lower.startsWith("buatkan 4 opsi");
 
+    const isVideoRequest =
+      lower.includes("bikin video") ||
+      lower.includes("buatkan video") ||
+      lower.includes("buat video") ||
+      lower.includes("generate video") ||
+      lower.includes("lanjut bikin video") ||
+      lower.includes("lanjut bikin videionya") ||
+      lower.includes("videonya") ||
+      lower.includes("video") ||
+      lower.includes("reel");
+
     const isImageRequest =
-      lower.includes("bikin gambar") ||
-      lower.includes("buatkan gambar") ||
-      lower.includes("buat gambar") ||
-      lower.includes("generate gambar") ||
-      lower.includes("gambar kucing") ||
-      lower.includes("minta gambar") ||
-      lower.includes("mana gambarnya") ||
-      lower.startsWith("gambar ") ||
-      lower.includes("gambar");
+      !isVideoRequest && (
+        lower.includes("bikin gambar") ||
+        lower.includes("buatkan gambar") ||
+        lower.includes("buat gambar") ||
+        lower.includes("generate gambar") ||
+        lower.includes("gambar kucing") ||
+        lower.includes("minta gambar") ||
+        lower.includes("mana gambarnya") ||
+        lower.startsWith("gambar ") ||
+        lower.includes("gambar")
+      );
 
     if (isRecommendationRequest) {
       const updatedRatios: TopicRatio[] = [
@@ -392,9 +406,30 @@ export function IndexPage() {
           options: generatedOptions
         });
       }
+    } else if (isVideoRequest) {
+      const resVid = await generateVeoVideo({ prompt: textToSend, durationSeconds: 8, resolution: "720p" });
+      const agentText = `Ini dia Video Reel Sinematik 8-Detik buatan **Google Veo 3.1 Video Engine**! 🎬✨\n\nKamu bisa langsung menekan tombol **Download Video Reel (MP4)** di bawah ini untuk menyimpannya ke Laptop atau Smartphone kamu:`;
+
+      const agentMsg: ChatMessage = {
+        id: agentMsgId,
+        role: "agent",
+        text: agentText,
+        type: "video_card",
+        videoUrl: resVid.videoUrl
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      setIsTyping(false);
+
+      if (currentUser && currentThreadId) {
+        saveChatMessageToDb(currentUser.id, currentThreadId, "sparky", agentText, {
+          type: "video_card",
+          videoUrl: resVid.videoUrl
+        });
+      }
     } else if (isImageRequest) {
       const resImg = await generateNanoBananaImage({ prompt: textToSend, aspectRatio: "4:5" });
-      const agentText = `Ini dia gambar visual HD yang kamu minta, dibuat langsung menggunakan **Google Nano Banana Engine**! 🎨✨\n\nKamu bisa langsung menekan tombol **Download Gambar** di bawah ini untuk menyimpannya ke Laptop atau Smartphone kamu:`;
+      const agentText = `Ini dia gambar visual HD buatan **Google Nano Banana Engine**! 🎨✨\n\nKlik tombol **Download Gambar** di bawah ini untuk menyimpannya ke perangkating:`;
 
       const agentMsg: ChatMessage = {
         id: agentMsgId,
@@ -416,7 +451,7 @@ export function IndexPage() {
     } else {
       const aiReply = await callGeminiApi({
         prompt: textToSend,
-        systemInstruction: "You are Sparky, an expert autonomous Instagram Marketing AI Agent from InstaSpark. You are equipped with Google Nano Banana Image Engine (gemini-3.1-flash-lite-image) for image creation and Google Veo 3.1 Video Engine for 8-second cinematic Reels. When the user asks if you can make images or videos, proudly and warmly confirm that YES, YOU CAN MAKE REAL IMAGES AND VIDEOS! Explain that when they ask for 4 content options or approve (ACC) a recommendation or ask to generate an image, Nano Banana generates high-resolution visual posts and Veo 3.1 generates 8-second video Reels. Emphasize that all generated images and videos can be SAVED / DOWNLOADED directly to their Laptop or Smartphone!"
+        systemInstruction: "You are Sparky, an AI Instagram Marketing Consultant. ALWAYS respond in VERY CONCISE, DIRECT, AND SHORT Indonesian (maximum 2-3 brief sentences). Be friendly, helpful, and get straight to the point without long disclaimers, repeated marketing speeches, or fluffy intros."
       });
 
       const agentMsg: ChatMessage = { id: agentMsgId, role: "agent", text: aiReply, type: "general" };
@@ -808,6 +843,38 @@ export function IndexPage() {
                                 className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
                               >
                                 <Download className="mr-1 size-3.5" /> Download Gambar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Inline Generated Video Card (Google Veo 3.1 Video Engine) */}
+                        {message.type === "video_card" && message.videoUrl && (
+                          <div className="mt-4 overflow-hidden rounded-2xl border border-blue-200 dark:border-blue-800 bg-slate-900/5 dark:bg-slate-900 p-3 shadow-md">
+                            <div className="relative aspect-[9/16] max-w-[220px] mx-auto overflow-hidden rounded-xl bg-slate-950 border border-border/60 shadow-lg">
+                              <img
+                                src={message.videoUrl}
+                                alt="Preview Video Reel 8-Detik Veo 3.1"
+                                className="w-full h-full object-cover animate-pulse"
+                              />
+                              <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center p-3 text-center text-white">
+                                <div className="size-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg mb-2">
+                                  <Clapperboard className="size-5 text-white animate-bounce" />
+                                </div>
+                                <span className="text-[11px] font-bold">Google Veo 3.1 Reel</span>
+                                <span className="text-[9px] text-blue-200 mt-0.5 font-medium">8 Detik · 720p HD</span>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                              <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                                <Sparkles className="size-3 text-blue-600" /> Google Veo 3.1 Engine (Rp14.000 / 8s)
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={() => triggerDirectDownload(message.videoUrl!, "veo-3.1-reel.mp4")}
+                                className="h-7 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                              >
+                                <Download className="mr-1 size-3.5" /> Download Video Reel (MP4)
                               </Button>
                             </div>
                           </div>
