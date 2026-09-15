@@ -261,6 +261,7 @@ export function IndexPage() {
           onClose={() => setOpenAuthModal(false)}
           onSuccess={(u) => {
             setCurrentUser(u);
+            window.dispatchEvent(new Event("auth-changed"));
             initUserAndChat();
           }}
         />
@@ -970,6 +971,7 @@ export function IndexPage() {
         onClose={() => setOpenAuthModal(false)}
         onSuccess={(u) => {
           setCurrentUser(u);
+          window.dispatchEvent(new Event("auth-changed"));
           initUserAndChat();
         }}
       />

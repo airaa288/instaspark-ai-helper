@@ -41,6 +41,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialTab = "signin" }:
         if (res.error) {
           setErrorMsg(res.error);
         } else if (res.user) {
+          window.dispatchEvent(new Event("auth-changed"));
           onSuccess(res.user);
           onClose();
         }
@@ -49,6 +50,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialTab = "signin" }:
         if (res.error) {
           setErrorMsg(res.error);
         } else if (res.user) {
+          window.dispatchEvent(new Event("auth-changed"));
           onSuccess(res.user);
           onClose();
         }
