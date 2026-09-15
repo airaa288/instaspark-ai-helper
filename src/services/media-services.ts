@@ -146,14 +146,20 @@ export async function generateNanoBananaImage(request: ImageGenRequest): Promise
 
   if (apiKey) {
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 1200);
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: englishPrompt }] }]
         })
       });
+
+      clearTimeout(timer);
 
       if (res.ok) {
         const data = await res.json();
@@ -168,7 +174,7 @@ export async function generateNanoBananaImage(request: ImageGenRequest): Promise
         }
       }
     } catch {
-      // Fall through to clean Flux engine
+      // Fall through to clean Flux engine immediately on timeout/error
     }
   }
 
