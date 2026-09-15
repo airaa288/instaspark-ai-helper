@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Check, CheckCircle2, Clapperboard, Copy, DollarSign, Layers, RotateCcw, Sparkles, SlidersHorizontal, TrendingUp, Wand2, ShieldCheck, PanelLeft, Plus, MessageSquare, Trash2, LogIn, X, Lock } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, CheckCircle2, Clapperboard, Copy, DollarSign, Download, Layers, RotateCcw, Sparkles, SlidersHorizontal, TrendingUp, Wand2, ShieldCheck, PanelLeft, Plus, MessageSquare, Trash2, LogIn, X, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import {
   TopicRatio
 } from "@/services/agent-engine";
 import { callGeminiApi } from "@/services/gemini";
+import { generateNanoBananaImage } from "@/services/media-services";
 import {
   getCurrentUser,
   getUserConversations,
@@ -41,7 +42,8 @@ interface ChatMessage {
   id: string;
   role: "user" | "agent";
   text: string;
-  type?: "general" | "recommendation_cards";
+  type?: "general" | "recommendation_cards" | "image_card";
+  imageUrl?: string;
   options?: ContentRecommendationOption[];
   approvedData?: ApprovedContentResult;
   isProcessingAcc?: boolean;
@@ -352,6 +354,17 @@ export function IndexPage() {
       lower === "buatkan 4 opsi" ||
       lower.startsWith("buatkan 4 opsi");
 
+    const isImageRequest =
+      lower.includes("bikin gambar") ||
+      lower.includes("buatkan gambar") ||
+      lower.includes("buat gambar") ||
+      lower.includes("generate gambar") ||
+      lower.includes("gambar kucing") ||
+      lower.includes("minta gambar") ||
+      lower.includes("mana gambarnya") ||
+      lower.startsWith("gambar ") ||
+      lower.includes("gambar");
+
     if (isRecommendationRequest) {
       const updatedRatios: TopicRatio[] = [
         { topicName: topic1, percentage: Number(pct1) },
@@ -379,10 +392,31 @@ export function IndexPage() {
           options: generatedOptions
         });
       }
+    } else if (isImageRequest) {
+      const resImg = await generateNanoBananaImage({ prompt: textToSend, aspectRatio: "4:5" });
+      const agentText = `Ini dia gambar visual HD yang kamu minta, dibuat langsung menggunakan **Google Nano Banana Engine**! 🎨✨\n\nKamu bisa langsung menekan tombol **Download Gambar** di bawah ini untuk menyimpannya ke Laptop atau Smartphone kamu:`;
+
+      const agentMsg: ChatMessage = {
+        id: agentMsgId,
+        role: "agent",
+        text: agentText,
+        type: "image_card",
+        imageUrl: resImg.imageUrl
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      setIsTyping(false);
+
+      if (currentUser && currentThreadId) {
+        saveChatMessageToDb(currentUser.id, currentThreadId, "sparky", agentText, {
+          type: "image_card",
+          imageUrl: resImg.imageUrl
+        });
+      }
     } else {
       const aiReply = await callGeminiApi({
         prompt: textToSend,
-        systemInstruction: "You are Sparky, an expert autonomous Instagram Marketing AI Agent from InstaSpark. You are equipped with Google Nano Banana Image Engine (gemini-3.1-flash-lite-image) for image creation and Google Veo 3.1 Video Engine for 8-second cinematic Reels. When the user asks if you can make images or videos, proudly and warmly confirm that YES, YOU CAN MAKE REAL IMAGES AND VIDEOS! Explain that when they ask for 4 content options or approve (ACC) a recommendation, Nano Banana generates high-resolution visual posts and Veo 3.1 generates 8-second video Reels. Emphasize that all generated images and videos can be SAVED / DOWNLOADED directly to their Laptop or Smartphone!"
+        systemInstruction: "You are Sparky, an expert autonomous Instagram Marketing AI Agent from InstaSpark. You are equipped with Google Nano Banana Image Engine (gemini-3.1-flash-lite-image) for image creation and Google Veo 3.1 Video Engine for 8-second cinematic Reels. When the user asks if you can make images or videos, proudly and warmly confirm that YES, YOU CAN MAKE REAL IMAGES AND VIDEOS! Explain that when they ask for 4 content options or approve (ACC) a recommendation or ask to generate an image, Nano Banana generates high-resolution visual posts and Veo 3.1 generates 8-second video Reels. Emphasize that all generated images and videos can be SAVED / DOWNLOADED directly to their Laptop or Smartphone!"
       });
 
       const agentMsg: ChatMessage = { id: agentMsgId, role: "agent", text: aiReply, type: "general" };
@@ -751,6 +785,33 @@ export function IndexPage() {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Inline Generated Image Card (Google Nano Banana Engine) */}
+                        {message.type === "image_card" && message.imageUrl && (
+                          <div className="mt-4 overflow-hidden rounded-2xl border border-blue-200 dark:border-blue-800 bg-slate-900/5 dark:bg-slate-900 p-3 shadow-md">
+                            <div className="relative aspect-[4/5] max-w-xs mx-auto overflow-hidden rounded-xl bg-slate-950 border border-border/60">
+                              <img
+                                src={message.imageUrl}
+                                alt="Gambar Visual Google Nano Banana"
+                                className="w-full h-full object-cover transition-transform hover:scale-105"
+                              />
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                              <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                                <Sparkles className="size-3 text-blue-600" /> Google Nano Banana Engine (1080x1350)
+                              </span>
+                              <a
+                                href={message.imageUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download="nano-banana-image.jpg"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                              >
+                                <Download className="size-3.5" /> Download Gambar
+                              </a>
+                            </div>
                           </div>
                         )}
 
