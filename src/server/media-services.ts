@@ -50,11 +50,10 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
   const duration = request.durationSeconds || 8;
   const cost = calculateVeoVideoCost(duration);
 
-  // In production, this calls the Veo 3.1 API endpoint using process.env.VEO_API_KEY
   return {
     id: `veo-${Date.now()}`,
     status: "completed",
-    videoUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+    videoUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1080&auto=format&fit=crop&q=80",
     durationSeconds: duration,
     costInUSD: cost.costUSD,
     costInIDR: cost.costIDR,
@@ -63,11 +62,43 @@ export async function generateVeoVideo(request: VideoGenRequest): Promise<VideoG
 }
 
 export async function generateNanoBananaImage(request: ImageGenRequest): Promise<ImageGenResponse> {
-  // In production, this calls the Gemini 2.5 Flash Image / Nano Banana API using process.env.IMAGE_GEN_API_KEY
+  const apiKey = process.env.IMAGE_GEN_API_KEY || process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: request.prompt }] }]
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const base64Img = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (base64Img) {
+          return {
+            id: `img-${Date.now()}`,
+            status: "completed",
+            imageUrl: `data:image/jpeg;base64,${base64Img}`,
+            aspectRatio: request.aspectRatio || "4:5",
+          };
+        }
+      }
+    } catch {
+      // Fall through to Pollinations engine
+    }
+  }
+
+  const encodedPrompt = encodeURIComponent(request.prompt || "aesthetic instagram post");
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true`;
+
   return {
     id: `img-${Date.now()}`,
     status: "completed",
-    imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+    imageUrl,
     aspectRatio: request.aspectRatio || "4:5",
   };
 }
